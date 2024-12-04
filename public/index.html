@@ -14,7 +14,8 @@
         <div class="logo">Wouter Koppen</div>
         <div class="menu">
             <a href="/" class="active">Portfolio</a>
-            <a href="/admin" class="admin-link">Beheer</a>
+            <a href="/login.html" id="loginBtn">Login</a>
+            <a href="/admin.html" id="adminBtn" style="display: none;">Beheer</a>
         </div>
     </nav>
     
@@ -165,6 +166,22 @@
 
         // Laad foto's wanneer de pagina geladen is
         document.addEventListener('DOMContentLoaded', loadPhotos);
+
+        // Check login status bij laden pagina
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch('/api/auth/check', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    document.getElementById('loginBtn').style.display = 'none';
+                    document.getElementById('adminBtn').style.display = 'inline-block';
+                }
+            } catch (error) {
+                console.error('Fout bij controleren login status:', error);
+            }
+        });
     </script>
 </body>
 </html> 
