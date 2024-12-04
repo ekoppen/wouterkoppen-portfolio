@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beheer - Wouter Koppen Fotografie</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+</head>
+<body>
+    <nav>
+        <div class="logo">Wouter Koppen</div>
+        <div class="menu">
+            <a href="/">Portfolio</a>
+            <a href="/admin" class="active">Beheer</a>
+        </div>
+    </nav>
+    
+    <main class="admin-panel">
+        <div id="error-container" class="error-message" style="display: none;"></div>
+        <div id="success-container" class="success-message" style="display: none;"></div>
+
+        <section class="upload-section">
+            <h2>Foto's uploaden</h2>
+            <div class="upload-zone" id="uploadZone">
+                <p>Sleep foto's hierheen of klik om te uploaden</p>
+            </div>
+        </section>
+
+        <section class="photos-section">
+            <h2>Foto's beheren</h2>
+            <div class="photos-grid" id="photosGrid">
+                <!-- Foto's worden hier dynamisch geladen -->
+            </div>
+        </section>
+
+        <!-- Modal voor foto bewerken -->
+        <div id="editModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Foto bewerken</h2>
+                <form id="editForm">
+                    <input type="hidden" id="editPhotoId">
+                    <div class="form-group">
+                        <label for="editTitle">Titel</label>
+                        <input type="text" id="editTitle" name="title">
+                    </div>
+                    <div class="form-group">
+                        <label for="editDescription">Beschrijving</label>
+                        <textarea id="editDescription" name="description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="editCategory">Categorie</label>
+                        <input type="text" id="editCategory" name="category">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="save-btn">Opslaan</button>
+                        <button type="button" class="delete-btn" onclick="deletePhoto()">Verwijderen</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Globale variabelen
+        let currentPhotoId = null;
+        const modal = document.getElementById('editModal');
+        const closeBtn = document.querySelector('.close');
+
+        // Helper functies voor meldingen
+        function showError(message) {
+            const container = document.getElementById('error-container');
+            container.textContent = message;
+            container.style.display = 'block';
+            setTimeout(() => container.style.display = 'none', 5000);
+        }
+
+        function showSuccess(message) {
+            const container = document.getElementById('success-container');
+            container.textContent = message;
+            container.style.display = 'block';
+            setTimeout(() => container.style.display = 'none', 3000);
+        }
+
+        // Foto's laden
+        async function loadPhotos() {
+            try {
+                const response = await fetch('/api/photos');
+                const photos = await response.json();
+                
+                const grid = document.getElementById('photosGrid');
+                grid.innerHTML = '';
+                
+                photos.forEach(photo => {
+                    const photoCard = document.createElement('div');
+                    photoCard.className = 'photo-card';
+                    photoCard.innerHTML = `
+                        <img src="${photo.path}" alt="${photo.title || 'Geen titel'}">
+                        <div class="photo-info">
+                            <h3>${photo.title || 'Geen titel'}</h3>
+                            <p>${photo.category || 'Geen categorie'}</p>
+                            <button onclick="editPhoto('${photo._id}')">Bewerken</button>
+                        </div>
+                    `;
+                    grid.appendChild(photoCard);
+                });
+            } catch (error) {
+                console.error('Error loading photos:', error);
+                showError('Fout bij het laden van foto\'s');
+            }
+        }
+
+        // Foto bewerken
+        async function editPhoto(photoId) {
+            try {
+                const response = await fetch(`/api/photos/${photoId}`);
+                const photo = await response.json();
+                
+                currentPhotoId = photoId;
+                document.getElementById('editPhotoId').value = photoId;
+                document.getElementById('editTitle').value = photo.title || '';
+                document.getElementById('editDescription').value = photo.description || '';
+                document.getElementById('editCategory').value = photo.category || '';
+                
+                modal.style.display = 'block';
+            } catch (error) {
+                console.error('Error fetching photo:', error);
+                showError('Fout bij het laden van foto gegevens');
+            }
+        }
+
+        // Foto opslaan
+        async function savePhoto(event) {
+            event.preventDefault();
+            
+            const photoId = document.getElementById('editPhotoId').value;
+            const data = {
+                title: document.getElementById('editTitle').value,
+                description: document.getElementById('editDescription').value,
+                category: document.getElementById('editCategory').value
+            };
+
+            try {
+                const response = await fetch(`/api/photos/${photoId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) throw new Error('Fout bij het opslaan');
+
+                showSuccess('Foto succesvol bijgewerkt');
+                modal.style.display = 'none';
+                loadPhotos();
+            } catch (error) {
+                console.error('Error saving photo:', error);
+                showError('Fout bij het opslaan van foto');
+            }
+        }
+
+        // Foto verwijderen
+        async function deletePhoto() {
+            if (!confirm('Weet je zeker dat je deze foto wilt verwijderen?')) return;
+
+            try {
+                const response = await fetch(`/api/photos/${currentPhotoId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('Fout bij het verwijderen');
+
+                showSuccess('Foto succesvol verwijderd');
+                modal.style.display = 'none';
+                loadPhotos();
+            } catch (error) {
+                console.error('Error deleting photo:', error);
+                showError('Fout bij het verwijderen van foto');
+            }
+        }
+
+        // Upload functionaliteit
+        async function handleFileUpload(files) {
+            const uploadedFiles = Array.from(files);
+            let successCount = 0;
+            let errorCount = 0;
+
+            for (let file of uploadedFiles) {
+                if (!file.type.startsWith('image/')) {
+                    showError(`${file.name} is geen afbeelding`);
+                    errorCount++;
+                    continue;
+                }
+
+                const formData = new FormData();
+                formData.append('photo', file);
+                
+                try {
+                    const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) throw new Error('Upload mislukt');
+                    
+                    successCount++;
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    showError(`Fout bij uploaden van ${file.name}`);
+                    errorCount++;
+                }
+            }
+
+            if (successCount > 0) {
+                showSuccess(`${successCount} foto('s) succesvol geüpload`);
+                loadPhotos();
+            }
+            if (errorCount > 0) {
+                showError(`${errorCount} foto('s) konden niet worden geüpload`);
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Upload zone
+            const uploadZone = document.getElementById('uploadZone');
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.multiple = true;
+            fileInput.accept = 'image/*';
+            fileInput.style.display = 'none';
+            document.body.appendChild(fileInput);
+
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadZone.classList.add('dragover');
+            });
+
+            uploadZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadZone.classList.remove('dragover');
+            });
+
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadZone.classList.remove('dragover');
+                handleFileUpload(e.dataTransfer.files);
+            });
+
+            uploadZone.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length > 0) {
+                    handleFileUpload(fileInput.files);
+                    fileInput.value = '';
+                }
+            });
+
+            // Modal
+            document.getElementById('editForm').addEventListener('submit', savePhoto);
+            closeBtn.addEventListener('click', () => modal.style.display = 'none');
+            window.addEventListener('click', (e) => {
+                if (e.target === modal) modal.style.display = 'none';
+            });
+
+            // Laad initiële data
+            loadPhotos();
+        });
+    </script>
+
+    <style>
+        .photos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .photo-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .photo-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .photo-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .photo-card .photo-info {
+            padding: 1rem;
+        }
+
+        .photo-card h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.1rem;
+        }
+
+        .photo-card p {
+            margin: 0 0 1rem 0;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        .photo-card button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .photo-card button:hover {
+            background: #1d4ed8;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--primary-color);
+            padding: 2rem;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .close:hover {
+            opacity: 1;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: var(--text-color);
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .save-btn,
+        .delete-btn {
+            padding: 0.5rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .save-btn {
+            background: #2563eb;
+            color: white;
+        }
+
+        .save-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .delete-btn {
+            background: #dc2626;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background: #b91c1c;
+        }
+    </style>
+</body>
+</html> 

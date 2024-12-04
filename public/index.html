@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wouter Koppen Fotografie</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav>
+        <div class="logo">Wouter Koppen</div>
+        <div class="menu">
+            <a href="/" class="active">Portfolio</a>
+            <a href="/admin" class="admin-link">Beheer</a>
+        </div>
+    </nav>
+    
+    <main class="carousel-container">
+        <div class="carousel">
+            <!-- Foto's worden hier dynamisch geladen -->
+        </div>
+        <button class="carousel-button prev" aria-label="Vorige foto">&#10094;</button>
+        <button class="carousel-button next" aria-label="Volgende foto">&#10095;</button>
+        
+        <div class="photo-info">
+            <h2 class="photo-title"></h2>
+            <p class="photo-description"></p>
+            <p class="photo-category"></p>
+        </div>
+
+        <div class="timer-bar"></div>
+    </main>
+
+    <script>
+        let currentPhotoIndex = 0;
+        let photos = [];
+        let slideTimer;
+        let timerBar;
+        const SLIDE_DURATION = 10000; // 10 seconden
+
+        async function loadPhotos() {
+            try {
+                const response = await fetch('/api/photos');
+                photos = await response.json();
+                if (photos.length > 0) {
+                    showPhoto(0);
+                    startSlideTimer();
+                }
+            } catch (error) {
+                console.error('Fout bij het laden van foto\'s:', error);
+            }
+        }
+
+        function showPhoto(index) {
+            if (photos.length === 0) return;
+            
+            // Zorg dat de index binnen bereik blijft
+            currentPhotoIndex = (index + photos.length) % photos.length;
+            
+            const photo = photos[currentPhotoIndex];
+            const carousel = document.querySelector('.carousel');
+            
+            // Update carousel
+            carousel.style.backgroundImage = `url(${photo.path})`;
+            
+            // Update foto informatie
+            document.querySelector('.photo-title').textContent = photo.title || '';
+            document.querySelector('.photo-description').textContent = photo.description || '';
+            document.querySelector('.photo-category').textContent = photo.category || '';
+
+            // Reset en start de timer
+            resetSlideTimer();
+            startSlideTimer();
+        }
+
+        function startSlideTimer() {
+            // Stop bestaande timer
+            if (slideTimer) clearInterval(slideTimer);
+            
+            // Start nieuwe timer
+            let startTime = Date.now();
+            timerBar = document.querySelector('.timer-bar');
+            timerBar.style.width = '0%';
+
+            // Update timer bar elke 100ms
+            slideTimer = setInterval(() => {
+                const elapsed = Date.now() - startTime;
+                const progress = (elapsed / SLIDE_DURATION) * 100;
+                
+                if (progress >= 100) {
+                    nextPhoto();
+                } else {
+                    timerBar.style.width = `${progress}%`;
+                }
+            }, 100);
+        }
+
+        function resetSlideTimer() {
+            if (slideTimer) clearInterval(slideTimer);
+            const timerBar = document.querySelector('.timer-bar');
+            timerBar.style.width = '0%';
+        }
+
+        function nextPhoto() {
+            showPhoto(currentPhotoIndex + 1);
+        }
+
+        function previousPhoto() {
+            showPhoto(currentPhotoIndex - 1);
+        }
+
+        // Event listeners
+        document.querySelector('.next').addEventListener('click', () => {
+            resetSlideTimer();
+            nextPhoto();
+        });
+
+        document.querySelector('.prev').addEventListener('click', () => {
+            resetSlideTimer();
+            previousPhoto();
+        });
+
+        // Keyboard navigatie
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') {
+                resetSlideTimer();
+                nextPhoto();
+            }
+            if (e.key === 'ArrowLeft') {
+                resetSlideTimer();
+                previousPhoto();
+            }
+        });
+
+        // Touch swipe ondersteuning
+        let touchStartX = 0;
+        const carousel = document.querySelector('.carousel');
+
+        carousel.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            resetSlideTimer();
+        });
+
+        carousel.addEventListener('touchend', (e) => {
+            const touchEndX = e.changedTouches[0].clientX;
+            const diff = touchStartX - touchEndX;
+
+            if (Math.abs(diff) > 50) { // Minimale swipe afstand
+                if (diff > 0) {
+                    nextPhoto(); // Swipe links
+                } else {
+                    previousPhoto(); // Swipe rechts
+                }
+            }
+        });
+
+        // Pauzeer timer bij hover over navigatie elementen
+        document.querySelectorAll('.carousel-button, .photo-info').forEach(element => {
+            element.addEventListener('mouseenter', resetSlideTimer);
+            element.addEventListener('mouseleave', startSlideTimer);
+        });
+
+        // Laad foto's wanneer de pagina geladen is
+        document.addEventListener('DOMContentLoaded', loadPhotos);
+    </script>
+</body>
+</html> 
