@@ -1,13 +1,36 @@
 const mongoose = require('mongoose');
 
-const PhotoSchema = new mongoose.Schema({
-    filename: String,
-    path: String,
-    title: String,
-    description: String,
-    category: String,
-    order: Number,
-    createdAt: { type: Date, default: Date.now }
+const photoSchema = new mongoose.Schema({
+    title: {
+        type: String,
+        required: false
+    },
+    description: {
+        type: String,
+        required: false
+    },
+    path: {
+        type: String,
+        required: true
+    },
+    thumbPath: {
+        type: String,
+        required: true
+    },
+    filename: {
+        type: String,
+        required: true
+    },
+    mimetype: {
+        type: String,
+        required: true
+    },
+    size: {
+        type: Number,
+        required: true
+    }
+}, {
+    timestamps: true
 });
 
-module.exports = mongoose.model('Photo', PhotoSchema); 
+module.exports = mongoose.model('Photo', photoSchema); 

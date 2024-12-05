@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const sharp = require('sharp');
 const Photo = require('../models/Photo');
 const auth = require('../middleware/auth');
 const Album = require('../models/Album');
@@ -11,10 +12,13 @@ const Album = require('../models/Album');
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const uploadDir = 'public/uploads';
-        // Maak upload directory als deze niet bestaat
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
+        const thumbsDir = 'public/uploads/thumbs';
+        // Maak upload directories als deze niet bestaan
+        [uploadDir, thumbsDir].forEach(dir => {
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true });
+            }
+        });
         cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
@@ -37,6 +41,18 @@ const upload = multer({
         cb(null, true);
     }
 });
+
+// Functie om thumbnail te genereren
+async function generateThumbnail(file) {
+    const thumbPath = path.join('public/uploads/thumbs', file.filename);
+    await sharp(file.path)
+        .resize(300, 300, {
+            fit: 'cover',
+            position: 'center'
+        })
+        .toFile(thumbPath);
+    return '/uploads/thumbs/' + file.filename;
+}
 
 // Alle foto's ophalen
 router.get('/', auth, async (req, res) => {
@@ -68,10 +84,14 @@ router.post('/', auth, upload.array('photos', 10), async (req, res) => {
 
         const uploadedPhotos = [];
         for (const file of req.files) {
+            // Genereer thumbnail
+            const thumbPath = await generateThumbnail(file);
+            
             const photo = new Photo({
                 title: file.originalname || '',
                 description: '',
                 path: `/uploads/${file.filename}`,
+                thumbPath: thumbPath,
                 filename: file.filename,
                 mimetype: file.mimetype,
                 size: file.size
@@ -89,6 +109,13 @@ router.post('/', auth, upload.array('photos', 10), async (req, res) => {
                 fs.unlink(file.path, (err) => {
                     if (err) console.error('Error deleting file:', err);
                 });
+                // Verwijder ook thumbnail als die bestaat
+                const thumbPath = path.join('public/uploads/thumbs', file.filename);
+                if (fs.existsSync(thumbPath)) {
+                    fs.unlink(thumbPath, (err) => {
+                        if (err) console.error('Error deleting thumbnail:', err);
+                    });
+                }
             }
         }
         res.status(500).json({ error: 'Fout bij uploaden foto\'s' });

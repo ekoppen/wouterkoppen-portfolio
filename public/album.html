@@ -411,12 +411,14 @@
             const card = e.target.closest('.photo-card');
             
             if (draggedCard && card && draggedCard !== card) {
+                const container = card.parentElement;
+                const draggedIndex = Array.from(container.children).indexOf(draggedCard);
+                const cardIndex = Array.from(container.children).indexOf(card);
+                
+                // Voeg een visuele indicator toe voor de drop positie
                 card.classList.add('drag-over');
                 
-                const draggedRect = draggedCard.getBoundingClientRect();
-                const cardRect = card.getBoundingClientRect();
-                
-                if (draggedRect.top < cardRect.top) {
+                if (draggedIndex < cardIndex) {
                     card.parentNode.insertBefore(draggedCard, card.nextSibling);
                 } else {
                     card.parentNode.insertBefore(draggedCard, card);
@@ -433,11 +435,19 @@
             try {
                 const response = await fetchWithAuth(`/api/albums/${albumId}/photos/reorder`, {
                     method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({ photoIds: newOrder })
                 });
 
-                if (!response.ok) throw new Error('Fout bij herordenen van foto\'s');
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Fout bij herordenen van foto\'s');
+                }
 
+                const result = await response.json();
+                console.log('Reorder result:', result);
                 showMessage('Volgorde succesvol aangepast');
             } catch (error) {
                 console.error('Error reordering photos:', error);

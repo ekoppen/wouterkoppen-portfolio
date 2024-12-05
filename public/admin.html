@@ -458,19 +458,19 @@
 
         // Update createPhotoElement functie
         function createPhotoElement(photo) {
-            console.log('Creating photo element:', photo); // Debug log
+            console.log('Creating photo element:', photo);
             const div = document.createElement('div');
             div.className = 'photo-card';
             div.setAttribute('draggable', true);
             div.dataset.id = photo._id;
             
-            // Zorg voor het juiste pad naar de foto
-            const photoPath = photo.path.startsWith('/') ? photo.path : `/${photo.path}`;
-            console.log('Photo URL:', photoPath);
+            // Gebruik thumbnail voor preview
+            const thumbPath = photo.thumbPath || photo.path;
+            console.log('Using thumb path:', thumbPath);
             
             div.innerHTML = `
                 <div class="photo-preview">
-                    <img src="${photoPath}" alt="${photo.title || 'Geen titel'}" draggable="false" 
+                    <img src="${thumbPath}" alt="${photo.title || 'Geen titel'}" draggable="false" 
                          onerror="console.error('Failed to load image:', this.src)">
                 </div>
                 <div class="photo-info">
@@ -488,13 +488,6 @@
                     </div>
                 </div>
             `;
-
-            // Voorkom dat de click events de drag & drop verstoren
-            div.addEventListener('click', (e) => {
-                if (isSelectMode && !e.target.closest('.photo-card-actions')) {
-                    togglePhotoSelection(photo._id, e);
-                }
-            });
 
             return div;
         }
@@ -672,14 +665,25 @@
         }
 
         function createAlbumElement(album) {
+            console.log('Creating album element:', album);
             const div = document.createElement('div');
             div.className = 'album-card';
+            div.id = `album-${album._id}`;
+            div.setAttribute('draggable', true);
             div.dataset.id = album._id;
 
-            const previewPhotos = album.photos.slice(0, 3);
-            const previewHtml = previewPhotos.map(photo => 
-                `<div class="stacked-photo" style="background-image: url('${photo.path}')"></div>`
-            ).join('');
+            // Neem maximaal 3 foto's voor de preview
+            const previewPhotos = album.photos ? album.photos.slice(0, 3) : [];
+            console.log('Preview photos:', previewPhotos);
+
+            let previewHtml;
+            if (previewPhotos.length > 0) {
+                previewHtml = previewPhotos.map(photo => 
+                    `<div class="stacked-photo" style="background-image: url('${photo.thumbPath || photo.path}')"></div>`
+                ).join('');
+            } else {
+                previewHtml = '<div class="empty-album">Geen foto\'s</div>';
+            }
 
             div.innerHTML = `
                 <div class="album-preview">
@@ -688,9 +692,9 @@
                 <div class="album-info">
                     <div class="album-info-text">
                         <h3>${album.title}</h3>
-                        <p>${album.photos.length} foto's</p>
+                        <p>${album.photos ? album.photos.length : 0} foto's</p>
                     </div>
-                    <div class="album-card-actions">
+                    <div class="album-actions">
                         <button class="btn-icon" onclick="editAlbum('${album._id}')" title="Bewerken">
                             <i class="fas fa-edit"></i>
                         </button>
@@ -701,8 +705,10 @@
                 </div>
             `;
 
+            // Voeg click handler toe voor album navigatie
             div.addEventListener('click', (e) => {
-                if (!e.target.closest('.album-card-actions')) {
+                // Voorkom navigatie als er op een button wordt geklikt
+                if (!e.target.closest('.album-actions')) {
                     window.location.href = `/album.html?id=${album._id}`;
                 }
             });
@@ -838,16 +844,25 @@
 
         async function loadAlbums() {
             try {
-                const response = await fetchWithAuth('/api/albums');
-                if (!response.ok) throw new Error('Fout bij ophalen albums');
-                
-                albums = await response.json();
+                // Eerst foto's laden
+                const photosResponse = await fetchWithAuth('/api/photos');
+                if (!photosResponse.ok) throw new Error('Fout bij ophalen foto\'s');
+                photos = await photosResponse.json();
+                console.log('Loaded photos:', photos);
+
+                // Dan albums laden
+                const albumsResponse = await fetchWithAuth('/api/albums');
+                if (!albumsResponse.ok) throw new Error('Fout bij ophalen albums');
+                albums = await albumsResponse.json();
+                console.log('Loaded albums:', albums);
+
                 const grid = document.getElementById('albumsGrid');
-                
                 grid.innerHTML = '';
                 albums.forEach(album => {
                     grid.appendChild(createAlbumElement(album));
                 });
+
+                initializeDragAndDrop();
             } catch (error) {
                 console.error('Error loading albums:', error);
                 showMessage('Fout bij het laden van albums', 'error');
@@ -987,162 +1002,156 @@
 
         // Drag & Drop functionaliteit
         function initializeDragAndDrop() {
-            console.log('Initializing drag & drop');
-            const photos = document.querySelectorAll('.photo-card');
-            const albums = document.querySelectorAll('.album-card');
-            const pages = document.querySelectorAll('.page-card');
+            console.log('Initializing drag & drop'); // Debug log
+            const draggableElements = document.querySelectorAll('.photo-card');
+            const dropTargets = document.querySelectorAll('.album-card');
 
-            // Maak foto's sleepbaar
-            photos.forEach(photo => {
-                photo.setAttribute('draggable', true);
-                photo.addEventListener('dragstart', handleDragStart);
-                photo.addEventListener('dragend', handleDragEnd);
+            console.log(`Found ${draggableElements.length} draggable elements and ${dropTargets.length} drop targets`);
+
+            draggableElements.forEach(element => {
+                element.setAttribute('draggable', true);
+                element.addEventListener('dragstart', handleDragStart);
+                element.addEventListener('dragend', handleDragEnd);
             });
 
-            // Maak albums dropbaar
-            albums.forEach(album => {
-                album.addEventListener('dragenter', handleDragEnter);
-                album.addEventListener('dragover', handleDragOver);
-                album.addEventListener('dragleave', handleDragLeave);
-                album.addEventListener('drop', handleDrop);
+            dropTargets.forEach(target => {
+                target.addEventListener('dragenter', handleDragEnter);
+                target.addEventListener('dragover', handleDragOver);
+                target.addEventListener('dragleave', handleDragLeave);
+                target.addEventListener('drop', handleDrop);
             });
-
-            // Maak pagina's dropbaar
-            pages.forEach(page => {
-                page.addEventListener('dragenter', handleDragEnter);
-                page.addEventListener('dragover', handleDragOver);
-                page.addEventListener('dragleave', handleDragLeave);
-                page.addEventListener('drop', handleDrop);
-            });
-
-            console.log(`Initialized ${photos.length} photos, ${albums.length} albums, ${pages.length} pages`);
         }
 
         function handleDragStart(e) {
-            // Zorg dat we het juiste element slepen
+            console.log('Drag start');
             const photoCard = e.target.closest('.photo-card');
-            if (!photoCard) return;
-
-            console.log('Drag start:', photoCard.dataset.id);
-            photoCard.classList.add('dragging');
-            
-            const type = photoCard.classList.contains('photo-card') ? 'photo' : 'album';
-            const data = {
-                id: photoCard.dataset.id,
-                type: type
-            };
-            console.log('Setting drag data:', data);
-            
-            e.dataTransfer.setData('text/plain', JSON.stringify(data));
-            e.dataTransfer.setData('application/json', JSON.stringify(data));
-            e.dataTransfer.effectAllowed = 'move';
-
-            // Maak een kleinere ghost image voor tijdens het slepen
-            const ghost = document.createElement('div');
-            ghost.className = 'drag-ghost';
-            ghost.style.width = '100px';
-            ghost.style.height = '100px';
-            ghost.style.position = 'absolute';
-            ghost.style.top = '-1000px';
-            ghost.style.backgroundImage = `url(${photoCard.querySelector('img').src})`;
-            ghost.style.backgroundSize = 'cover';
-            ghost.style.backgroundPosition = 'center';
-            ghost.style.borderRadius = '4px';
-            document.body.appendChild(ghost);
-            e.dataTransfer.setDragImage(ghost, 50, 50);
-            setTimeout(() => ghost.remove(), 0);
+            if (photoCard) {
+                photoCard.classList.add('dragging');
+                e.dataTransfer.setData('text/plain', photoCard.dataset.id);
+                e.dataTransfer.effectAllowed = 'move';
+            }
         }
 
-        function handleDragOver(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const target = e.currentTarget;
-            if (!target.classList.contains('drag-over')) {
-                target.classList.add('drag-over');
-            }
-            
-            e.dataTransfer.dropEffect = 'move';
+        function handleDragEnd(e) {
+            console.log('Drag end');
+            document.querySelector('.dragging')?.classList.remove('dragging');
+            document.querySelectorAll('.drop-target').forEach(el => {
+                el.classList.remove('drop-target');
+            });
         }
 
         function handleDragEnter(e) {
             e.preventDefault();
-            e.stopPropagation();
-            console.log('Drag enter:', e.currentTarget.dataset.id);
+            console.log('Drag enter');
+            const albumCard = e.target.closest('.album-card');
+            if (albumCard && !albumCard.classList.contains('dragging')) {
+                albumCard.classList.add('drop-target');
+            }
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            const albumCard = e.target.closest('.album-card');
+            if (albumCard && !albumCard.classList.contains('dragging')) {
+                e.dataTransfer.dropEffect = 'move';
+                albumCard.classList.add('drop-target');
+            }
         }
 
         function handleDragLeave(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.currentTarget.classList.remove('drag-over');
-        }
-
-        function handleDragEnd(e) {
-            e.preventDefault();
-            e.stopPropagation();
+            console.log('Drag leave');
+            const albumCard = e.target.closest('.album-card');
+            const relatedTarget = e.relatedTarget?.closest('.album-card');
             
-            console.log('Drag end');
-            const photoCard = e.target.closest('.photo-card');
-            if (photoCard) {
-                photoCard.classList.remove('dragging');
+            // Verwijder alleen de drop-target class als we echt het album verlaten
+            if (albumCard && albumCard !== relatedTarget) {
+                albumCard.classList.remove('drop-target');
             }
-            
-            document.querySelectorAll('.drag-over').forEach(el => {
-                el.classList.remove('drag-over');
-            });
         }
 
-        async function handleDrop(e) {
+        function handleDrop(e) {
             e.preventDefault();
-            console.log('Drop event triggered');
+            console.log('Drop event');
             
-            const target = e.currentTarget;
-            target.classList.remove('drag-over');
+            const albumCard = e.target.closest('.album-card');
+            if (!albumCard) return;
 
+            const photoId = e.dataTransfer.getData('text/plain');
+            if (!photoId) {
+                console.error('No photo ID found in drop event');
+                return;
+            }
+
+            const albumId = albumCard.dataset.id;
+            albumCard.classList.remove('drop-target');
+            
+            handlePhotoDropOnAlbum(photoId, albumId);
+        }
+
+        async function handlePhotoDropOnAlbum(photoId, albumId) {
+            console.log('Handling photo drop:', { photoId, albumId });
             try {
-                let jsonData = e.dataTransfer.getData('application/json');
-                if (!jsonData) {
-                    jsonData = e.dataTransfer.getData('text/plain');
+                const response = await fetchWithAuth(`/api/albums/${albumId}/photos/${photoId}`, {
+                    method: 'PUT'
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Fout bij toevoegen foto aan album');
                 }
-                console.log('Dropped data:', jsonData);
+
+                const result = await response.json();
+                console.log('Drop result:', result);
                 
-                if (!jsonData) {
-                    console.error('No data found in drop event');
-                    return;
+                // Update de albums array met het nieuwe album
+                const albumIndex = albums.findIndex(a => a._id === albumId);
+                if (albumIndex !== -1) {
+                    albums[albumIndex] = result;
                 }
-
-                const data = JSON.parse(jsonData);
-                const targetId = target.dataset.id;
-                const targetType = target.classList.contains('album-card') ? 'album' : 'page';
-
-                console.log('Processing drop:', { data, targetId, targetType });
-
-                if (data.type === 'photo' && targetType === 'album') {
-                    await addPhotoToAlbum(data.id, targetId);
-                } else if (data.type === 'album' && targetType === 'page') {
-                    await addAlbumToPage(data.id, targetId);
-                }
+                
+                // Update de UI door alles opnieuw te laden
+                await loadPhotos();
+                await loadAlbums();
+                showMessage('Foto succesvol toegevoegd aan album');
             } catch (error) {
-                console.error('Error handling drop:', error);
-                showMessage('Fout bij verplaatsen item', 'error');
+                console.error('Error adding photo to album:', error);
+                showMessage('Fout bij toevoegen foto aan album', 'error');
+            }
+        }
+
+        function updateAlbumPreview(albumId) {
+            const album = albums.find(a => a._id === albumId);
+            if (!album) return;
+
+            const previewContainer = document.querySelector(`#album-${albumId} .album-preview`);
+            if (!previewContainer) return;
+
+            // Vind de eerste foto in het album
+            const firstPhoto = photos.find(p => album.photos && album.photos.includes(p._id));
+            
+            if (firstPhoto) {
+                const photoPath = firstPhoto.path.startsWith('/') ? firstPhoto.path : `/${firstPhoto.path}`;
+                previewContainer.innerHTML = `<img src="${photoPath}" alt="${album.title}" draggable="false">`;
+            } else {
+                previewContainer.innerHTML = '<div class="empty-album">Geen foto\'s</div>';
             }
         }
 
         // Element creation functions
         function createPhotoElement(photo) {
-            console.log('Creating photo element:', photo); // Debug log
+            console.log('Creating photo element:', photo);
             const div = document.createElement('div');
             div.className = 'photo-card';
             div.setAttribute('draggable', true);
             div.dataset.id = photo._id;
             
-            // Zorg voor het juiste pad naar de foto
-            const photoPath = photo.path.startsWith('/') ? photo.path : `/${photo.path}`;
-            console.log('Photo URL:', photoPath);
+            // Gebruik thumbnail voor preview
+            const thumbPath = photo.thumbPath || photo.path;
+            console.log('Using thumb path:', thumbPath);
             
             div.innerHTML = `
                 <div class="photo-preview">
-                    <img src="${photoPath}" alt="${photo.title || 'Geen titel'}" draggable="false" 
+                    <img src="${thumbPath}" alt="${photo.title || 'Geen titel'}" draggable="false" 
                          onerror="console.error('Failed to load image:', this.src)">
                 </div>
                 <div class="photo-info">
@@ -1161,37 +1170,40 @@
                 </div>
             `;
 
-            // Voorkom dat de click events de drag & drop verstoren
-            div.addEventListener('click', (e) => {
-                if (isSelectMode && !e.target.closest('.photo-card-actions')) {
-                    togglePhotoSelection(photo._id, e);
-                }
-            });
-
             return div;
         }
 
         function createAlbumElement(album) {
+            console.log('Creating album element:', album);
             const div = document.createElement('div');
             div.className = 'album-card';
+            div.id = `album-${album._id}`;
+            div.setAttribute('draggable', true);
             div.dataset.id = album._id;
 
-            const previewPhotos = album.photos.slice(0, 3);
-            const previewHtml = previewPhotos.map(photo => {
-                const thumbPath = photo.path.replace('/uploads/', '/uploads/thumbs/');
-                return `<div class="stacked-photo" style="background-image: url('${thumbPath}')"></div>`;
-            }).join('');
+            // Neem maximaal 3 foto's voor de preview
+            const previewPhotos = album.photos ? album.photos.slice(0, 3) : [];
+            console.log('Preview photos:', previewPhotos);
+
+            let previewHtml;
+            if (previewPhotos.length > 0) {
+                previewHtml = previewPhotos.map(photo => 
+                    `<div class="stacked-photo" style="background-image: url('${photo.thumbPath || photo.path}')"></div>`
+                ).join('');
+            } else {
+                previewHtml = '<div class="empty-album">Geen foto\'s</div>';
+            }
 
             div.innerHTML = `
                 <div class="album-preview">
-                    ${previewHtml || '<div class="empty-album"><i class="fas fa-images"></i></div>'}
+                    ${previewHtml}
                 </div>
                 <div class="album-info">
                     <div class="album-info-text">
                         <h3>${album.title}</h3>
-                        <p>${album.photos.length} foto's</p>
+                        <p>${album.photos ? album.photos.length : 0} foto's</p>
                     </div>
-                    <div class="album-card-actions">
+                    <div class="album-actions">
                         <button class="btn-icon" onclick="editAlbum('${album._id}')" title="Bewerken">
                             <i class="fas fa-edit"></i>
                         </button>
@@ -1202,8 +1214,10 @@
                 </div>
             `;
 
+            // Voeg click handler toe voor album navigatie
             div.addEventListener('click', (e) => {
-                if (!e.target.closest('.album-card-actions')) {
+                // Voorkom navigatie als er op een button wordt geklikt
+                if (!e.target.closest('.album-actions')) {
                     window.location.href = `/album.html?id=${album._id}`;
                 }
             });
@@ -1271,12 +1285,19 @@
 
         async function loadAlbums() {
             try {
-                const response = await fetchWithAuth('/api/albums');
-                if (!response.ok) throw new Error('Fout bij ophalen albums');
-                
-                albums = await response.json();
+                // Eerst foto's laden
+                const photosResponse = await fetchWithAuth('/api/photos');
+                if (!photosResponse.ok) throw new Error('Fout bij ophalen foto\'s');
+                photos = await photosResponse.json();
+                console.log('Loaded photos:', photos);
+
+                // Dan albums laden
+                const albumsResponse = await fetchWithAuth('/api/albums');
+                if (!albumsResponse.ok) throw new Error('Fout bij ophalen albums');
+                albums = await albumsResponse.json();
+                console.log('Loaded albums:', albums);
+
                 const grid = document.getElementById('albumsGrid');
-                
                 grid.innerHTML = '';
                 albums.forEach(album => {
                     grid.appendChild(createAlbumElement(album));

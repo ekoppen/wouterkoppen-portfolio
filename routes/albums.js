@@ -104,22 +104,25 @@ router.get('/:id/photos', auth, async (req, res) => {
     }
 });
 
-// Foto aan album toevoegen
-router.post('/:id/photos', auth, async (req, res) => {
+// Foto toevoegen aan album
+router.put('/:albumId/photos/:photoId', auth, async (req, res) => {
     try {
-        const { photoId } = req.body;
-        const album = await Album.findById(req.params.id);
+        const { albumId, photoId } = req.params;
         
+        const album = await Album.findById(albumId);
         if (!album) {
             return res.status(404).json({ error: 'Album niet gevonden' });
         }
 
+        // Voeg de foto toe als deze nog niet in het album zit
         if (!album.photos.includes(photoId)) {
             album.photos.push(photoId);
             await album.save();
         }
 
-        res.json(album);
+        // Stuur het bijgewerkte album terug met foto informatie
+        const updatedAlbum = await Album.findById(albumId).populate('photos');
+        res.json(updatedAlbum);
     } catch (error) {
         console.error('Error adding photo to album:', error);
         res.status(500).json({ error: 'Fout bij toevoegen van foto aan album' });
@@ -146,19 +149,27 @@ router.delete('/:id/photos/:photoId', auth, async (req, res) => {
 });
 
 // Foto's in album herordenen
-router.put('/:id/photos/reorder', auth, async (req, res) => {
+router.put('/:albumId/photos/reorder', auth, async (req, res) => {
     try {
+        const { albumId } = req.params;
         const { photoIds } = req.body;
-        const album = await Album.findById(req.params.id);
-        
+
+        if (!photoIds || !Array.isArray(photoIds)) {
+            return res.status(400).json({ error: 'Ongeldige foto volgorde' });
+        }
+
+        const album = await Album.findById(albumId);
         if (!album) {
             return res.status(404).json({ error: 'Album niet gevonden' });
         }
 
+        // Update de foto volgorde
         album.photos = photoIds;
         await album.save();
 
-        res.json(album);
+        // Stuur het bijgewerkte album terug met foto informatie
+        const updatedAlbum = await Album.findById(albumId).populate('photos');
+        res.json(updatedAlbum);
     } catch (error) {
         console.error('Error reordering photos:', error);
         res.status(500).json({ error: 'Fout bij herordenen van foto\'s' });
