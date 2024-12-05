@@ -379,27 +379,37 @@
 
         // Drag & Drop functionaliteit
         function initializeDragAndDrop() {
-            const photoCards = document.querySelectorAll('.photo-card');
             const photosGrid = document.getElementById('photosGrid');
+            if (!photosGrid) return;
+
+            const photoCards = photosGrid.querySelectorAll('.photo-card');
+            console.log('Initializing drag & drop for', photoCards.length, 'photos');
 
             photoCards.forEach(card => {
                 card.setAttribute('draggable', true);
                 card.addEventListener('dragstart', handleDragStart);
                 card.addEventListener('dragend', handleDragEnd);
-                card.addEventListener('dragover', handleDragOver);
-                card.addEventListener('drop', handleDrop);
             });
+
+            photosGrid.addEventListener('dragover', handleDragOver);
+            photosGrid.addEventListener('drop', handleDrop);
         }
 
         function handleDragStart(e) {
-            e.target.classList.add('dragging');
-            e.dataTransfer.effectAllowed = 'move';
+            const photoCard = e.target.closest('.photo-card');
+            if (photoCard) {
+                photoCard.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            }
         }
 
         function handleDragEnd(e) {
-            e.target.classList.remove('dragging');
-            document.querySelectorAll('.photo-card').forEach(card => {
-                card.classList.remove('drag-over');
+            const photoCard = e.target.closest('.photo-card');
+            if (photoCard) {
+                photoCard.classList.remove('dragging');
+            }
+            document.querySelectorAll('.drag-over').forEach(el => {
+                el.classList.remove('drag-over');
             });
         }
 
@@ -433,7 +443,8 @@
             const newOrder = Array.from(photosGrid.children).map(card => card.dataset.id);
             
             try {
-                const response = await fetchWithAuth(`/api/albums/${albumId}/photos/reorder`, {
+                console.log('Current photo order:', newOrder);
+                const response = await fetchWithAuth(`/api/albums/${albumId}/reorder`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
@@ -441,17 +452,24 @@
                     body: JSON.stringify({ photoIds: newOrder })
                 });
 
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Fout bij herordenen van foto\'s');
+                let responseData;
+                try {
+                    responseData = await response.json();
+                } catch (error) {
+                    console.error('Error parsing response:', error);
+                    throw new Error('Onverwachte server response');
                 }
 
-                const result = await response.json();
-                console.log('Reorder result:', result);
+                if (!response.ok) {
+                    console.error('Server error:', responseData);
+                    throw new Error(responseData.error || responseData.details || 'Fout bij herordenen van foto\'s');
+                }
+
+                console.log('Reorder success:', responseData);
                 showMessage('Volgorde succesvol aangepast');
             } catch (error) {
                 console.error('Error reordering photos:', error);
-                showMessage('Fout bij aanpassen volgorde', 'error');
+                showMessage(error.message || 'Fout bij aanpassen volgorde', 'error');
                 await loadPhotos(); // Herstel de originele volgorde bij een fout
             }
         }

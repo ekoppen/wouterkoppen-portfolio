@@ -1,56 +1,34 @@
-# TODO Lijst Wouter Koppen Portfolio
+# TODO
 
-## Hoge Prioriteit
-- [ ] Authenticatie verbeteren
-  - Overstappen van sessies naar JWT
-  - JWT refresh tokens implementeren
-  - Token expiratie en vernieuwing
-  - Secure cookie storage voor tokens
-  - Logout functionaliteit verbeteren
+## Gedaan
+- [x] Basis setup met Express en MongoDB
+- [x] Admin login functionaliteit
+- [x] Foto upload functionaliteit
+- [x] Album management (aanmaken, bewerken, verwijderen)
+- [x] Foto's toevoegen aan albums
+- [x] Foto's herordenen binnen albums via drag & drop
+- [x] Thumbnail generatie voor foto's
+- [x] Album preview met gestapelde foto's
+- [x] Consistente styling voor admin interface
+- [x] Pagina management (aanmaken, bewerken, verwijderen)
+- [x] Responsive grid layout voor foto's en albums
+- [x] Hover effecten en visuele feedback
+- [x] Error handling en gebruikersfeedback
 
-## Functionaliteit
-- [ ] Album management implementeren
-  - Albums aanmaken/bewerken/verwijderen
-  - Foto's toevoegen aan albums
-  - Foto's herordenen binnen albums
-- [ ] Foto management verbeteren
-  - Foto's bewerken (titel, beschrijving)
-  - Foto's categoriseren
-  - Foto volgorde aanpassen
-
-## Frontend
-- [ ] Portfolio homepage styling
-- [ ] Responsive design verbeteren
-- [ ] Laadtijden optimaliseren
-  - Foto's comprimeren
-  - Lazy loading implementeren
-
-## Backend
-- [ ] Error handling verbeteren
-- [ ] Logging toevoegen
-- [ ] API documentatie maken
-
-## Beveiliging
-- [ ] Rate limiting toevoegen
-- [ ] Input validatie verbeteren
-- [ ] Security headers toevoegen
-- [ ] CSRF bescherming implementeren
-- [ ] XSS bescherming verbeteren
-
-## Testen
-- [ ] Unit tests schrijven
-- [ ] End-to-end tests toevoegen
-- [ ] Performance tests uitvoeren
-- [ ] Security tests toevoegen
-
-## Deployment
-- [ ] CI/CD pipeline opzetten
-- [ ] Backup strategie implementeren
-- [ ] Monitoring toevoegen
-- [ ] SSL/TLS configuratie optimaliseren
-
-## Nice to have
-- [ ] Thema's implementeren (light/dark mode)
-- [ ] Zoekfunctionaliteit toevoegen
-- [ ] Social media integratie
-- [ ] Analytics toevoegen 
+## Nog te doen
+- [ ] Albums toevoegen aan pagina's via drag & drop
+- [ ] Albums herordenen binnen pagina's
+- [ ] Frontend voor bezoekers
+- [ ] Lightbox voor foto weergave
+- [ ] SEO optimalisatie
+- [ ] Performance optimalisatie (lazy loading, caching)
+- [ ] Backup functionaliteit
+- [ ] Automatische image optimization
+- [ ] Betere error handling voor edge cases
+- [ ] Uitgebreidere logging voor debugging
+- [ ] Unit tests toevoegen
+- [ ] E2E tests toevoegen
+- [ ] Documentatie bijwerken
+- [ ] Deployment instructies
+- [ ] Security audit
+- [ ] GDPR compliance check 
