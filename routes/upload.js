@@ -27,7 +27,7 @@ const storage = multer.diskStorage({
 const upload = multer({
     storage: storage,
     limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB limiet
+        fileSize: 25 * 1024 * 1024 // 25MB limiet
     },
     fileFilter: (req, file, cb) => {
         // Accepteer alleen afbeeldingen
@@ -60,33 +60,38 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Upload route
-router.post('/', auth, upload.single('photo'), async (req, res) => {
+router.post('/', auth, upload.array('photos', 10), async (req, res) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ error: 'Geen bestand geüpload' });
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ error: 'Geen bestanden geüpload' });
         }
 
-        // Maak nieuw foto document
-        const photo = new Photo({
-            title: req.body.title || '',
-            description: req.body.description || '',
-            path: `/uploads/${req.file.filename}`,
-            filename: req.file.filename,
-            mimetype: req.file.mimetype,
-            size: req.file.size
-        });
+        const uploadedPhotos = [];
+        for (const file of req.files) {
+            const photo = new Photo({
+                title: file.originalname || '',
+                description: '',
+                path: `/uploads/${file.filename}`,
+                filename: file.filename,
+                mimetype: file.mimetype,
+                size: file.size
+            });
+            await photo.save();
+            uploadedPhotos.push(photo);
+        }
 
-        await photo.save();
-        res.status(201).json(photo);
+        res.status(201).json(uploadedPhotos);
     } catch (error) {
         console.error('Upload error:', error);
-        // Verwijder geüpload bestand bij error
-        if (req.file) {
-            fs.unlink(req.file.path, (err) => {
-                if (err) console.error('Error deleting file:', err);
-            });
+        // Verwijder geüploade bestanden bij error
+        if (req.files) {
+            for (const file of req.files) {
+                fs.unlink(file.path, (err) => {
+                    if (err) console.error('Error deleting file:', err);
+                });
+            }
         }
-        res.status(500).json({ error: 'Fout bij uploaden foto' });
+        res.status(500).json({ error: 'Fout bij uploaden foto\'s' });
     }
 });
 

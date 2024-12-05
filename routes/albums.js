@@ -60,9 +60,11 @@ router.put('/:id', auth, async (req, res) => {
 router.delete('/:id', auth, async (req, res) => {
     try {
         const album = await Album.findByIdAndDelete(req.params.id);
+        
         if (!album) {
             return res.status(404).json({ error: 'Album niet gevonden' });
         }
+
         res.json({ message: 'Album succesvol verwijderd' });
     } catch (error) {
         console.error('Error deleting album:', error);
@@ -70,56 +72,96 @@ router.delete('/:id', auth, async (req, res) => {
     }
 });
 
-// Foto's toevoegen aan album
-router.post('/:id/photos', auth, async (req, res) => {
+// Specifiek album ophalen met foto's
+router.get('/:id', auth, async (req, res) => {
     try {
-        const { photoIds } = req.body;
-        if (!photoIds || !Array.isArray(photoIds)) {
-            return res.status(400).json({ error: 'Foto IDs zijn verplicht' });
-        }
-
-        const album = await Album.findById(req.params.id);
+        const album = await Album.findById(req.params.id).populate('photos');
+        
         if (!album) {
             return res.status(404).json({ error: 'Album niet gevonden' });
         }
 
-        // Voeg nieuwe foto's toe en verwijder duplicaten
-        const uniquePhotos = new Set([...album.photos.map(p => p.toString()), ...photoIds]);
-        album.photos = Array.from(uniquePhotos);
-        
-        await album.save();
-        
-        // Haal het bijgewerkte album op met foto details
-        const updatedAlbum = await Album.findById(req.params.id).populate('photos');
-        res.json(updatedAlbum);
+        res.json(album);
     } catch (error) {
-        console.error('Error adding photos to album:', error);
-        res.status(500).json({ error: 'Fout bij toevoegen van foto\'s aan album' });
+        console.error('Error fetching album:', error);
+        res.status(500).json({ error: 'Fout bij ophalen van album' });
     }
 });
 
-// Foto's verwijderen uit album
-router.delete('/:id/photos', auth, async (req, res) => {
+// Foto's van een album ophalen
+router.get('/:id/photos', auth, async (req, res) => {
     try {
-        const { photoIds } = req.body;
-        if (!photoIds || !Array.isArray(photoIds)) {
-            return res.status(400).json({ error: 'Foto IDs zijn verplicht' });
-        }
-
-        const album = await Album.findById(req.params.id);
+        const album = await Album.findById(req.params.id).populate('photos');
+        
         if (!album) {
             return res.status(404).json({ error: 'Album niet gevonden' });
         }
 
-        album.photos = album.photos.filter(p => !photoIds.includes(p.toString()));
-        await album.save();
-        
-        // Haal het bijgewerkte album op met foto details
-        const updatedAlbum = await Album.findById(req.params.id).populate('photos');
-        res.json(updatedAlbum);
+        res.json(album.photos);
     } catch (error) {
-        console.error('Error removing photos from album:', error);
-        res.status(500).json({ error: 'Fout bij verwijderen van foto\'s uit album' });
+        console.error('Error fetching album photos:', error);
+        res.status(500).json({ error: 'Fout bij ophalen van foto\'s' });
+    }
+});
+
+// Foto aan album toevoegen
+router.post('/:id/photos', auth, async (req, res) => {
+    try {
+        const { photoId } = req.body;
+        const album = await Album.findById(req.params.id);
+        
+        if (!album) {
+            return res.status(404).json({ error: 'Album niet gevonden' });
+        }
+
+        if (!album.photos.includes(photoId)) {
+            album.photos.push(photoId);
+            await album.save();
+        }
+
+        res.json(album);
+    } catch (error) {
+        console.error('Error adding photo to album:', error);
+        res.status(500).json({ error: 'Fout bij toevoegen van foto aan album' });
+    }
+});
+
+// Foto uit album verwijderen
+router.delete('/:id/photos/:photoId', auth, async (req, res) => {
+    try {
+        const album = await Album.findById(req.params.id);
+        
+        if (!album) {
+            return res.status(404).json({ error: 'Album niet gevonden' });
+        }
+
+        album.photos = album.photos.filter(id => id.toString() !== req.params.photoId);
+        await album.save();
+
+        res.json(album);
+    } catch (error) {
+        console.error('Error removing photo from album:', error);
+        res.status(500).json({ error: 'Fout bij verwijderen van foto uit album' });
+    }
+});
+
+// Foto's in album herordenen
+router.put('/:id/photos/reorder', auth, async (req, res) => {
+    try {
+        const { photoIds } = req.body;
+        const album = await Album.findById(req.params.id);
+        
+        if (!album) {
+            return res.status(404).json({ error: 'Album niet gevonden' });
+        }
+
+        album.photos = photoIds;
+        await album.save();
+
+        res.json(album);
+    } catch (error) {
+        console.error('Error reordering photos:', error);
+        res.status(500).json({ error: 'Fout bij herordenen van foto\'s' });
     }
 });
 

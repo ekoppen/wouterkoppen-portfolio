@@ -19,8 +19,8 @@ mongoose.connect(process.env.MONGODB_URI, {
 });
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Statische bestanden
 app.use(express.static('public'));
@@ -30,10 +30,12 @@ app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 const authRoutes = require('./routes/auth');
 const uploadRoutes = require('./routes/upload');
 const albumRoutes = require('./routes/albums');
+const pageRoutes = require('./routes/pages');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/photos', uploadRoutes);
 app.use('/api/albums', albumRoutes);
+app.use('/api/pages', pageRoutes);
 
 // Admin gebruiker aanmaken als deze nog niet bestaat
 async function createAdminUser() {

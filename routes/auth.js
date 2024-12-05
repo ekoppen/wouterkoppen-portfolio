@@ -48,4 +48,15 @@ router.get('/verify', auth, (req, res) => {
     res.json({ valid: true });
 });
 
+// Check auth status route
+router.get('/check', auth, (req, res) => {
+    res.json({ 
+        authenticated: true,
+        user: {
+            id: req.user.userId,
+            username: req.user.username
+        }
+    });
+});
+
 module.exports = router; 
