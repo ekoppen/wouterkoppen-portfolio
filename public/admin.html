@@ -7,6 +7,349 @@
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        /* ... existing styles ... */
+        
+        /* Dropdown styling */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #fff;
+            min-width: 160px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border-radius: 4px;
+            z-index: 1000;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.2s;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #f5f5f5;
+        }
+
+        .dropdown-content a.disabled {
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        .dropdown-content a.disabled:hover {
+            background-color: transparent;
+        }
+
+        .album-card {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .album-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .album-view {
+            padding: 20px;
+        }
+
+        .album-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .album-header h2 {
+            margin: 0;
+        }
+
+        .remove-from-album {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 2;
+        }
+
+        .remove-from-album i {
+            color: #dc3545;
+            font-size: 20px;
+        }
+
+        .photo-card:hover .remove-from-album {
+            opacity: 1;
+        }
+
+        .photo-card {
+            position: relative;
+            background: #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            aspect-ratio: 1;
+        }
+
+        .photo-card img {
+            width: 100%;
+            height: calc(100% - 60px);
+            object-fit: cover;
+            display: block;
+        }
+
+        .photo-card-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 8px;
+            z-index: 2;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .photo-card:hover .photo-card-actions {
+            opacity: 1;
+        }
+
+        .photo-card-actions .btn-icon {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.2s;
+            backdrop-filter: blur(2px);
+        }
+
+        .photo-card-actions .btn-icon i {
+            font-size: 16px;
+        }
+
+        .photo-card-actions .btn-icon:hover {
+            background: white;
+            color: #333;
+            transform: scale(1.1);
+        }
+
+        .photo-card-actions .btn-icon.btn-danger {
+            color: #dc3545;
+        }
+
+        .photo-card-actions .btn-icon.btn-danger:hover {
+            background: white;
+            color: #bd2130;
+        }
+
+        .photo-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #e0e0e0;
+            padding: 10px;
+            display: flex;
+            height: 40px;
+            box-sizing: border-box;
+        }
+
+        .photo-info-text {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .photo-info-text h3 {
+            margin: 0;
+            color: #333;
+            font-size: 14px;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: left;
+        }
+
+        .photo-info-text p {
+            margin: 0;
+            color: #666;
+            font-size: 12px;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: left;
+        }
+
+        /* Album view specifieke styling */
+        .album-view .photo-info {
+            display: none;
+        }
+
+        .album-view .photo-card img {
+            height: 100%;
+        }
+
+        .photos-actions {
+            background: #e8e8e8;
+            padding: 8px 15px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .action-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .thumbnail-size-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .thumbnail-size-control input[type="range"] {
+            width: 100px;
+        }
+
+        .photos-grid {
+            background: #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(var(--thumbnail-size, 200px), 1fr));
+            gap: 20px;
+        }
+
+        .photo-card {
+            position: relative;
+            background: #f0f0f0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: grab;
+            user-select: none;
+        }
+
+        .bulk-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        /* Album view specifieke styling */
+        .album-view .photos-grid {
+            background: #e0e0e0;
+        }
+
+        .album-view .photo-card {
+            aspect-ratio: 1;
+        }
+
+        .album-view .photo-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .album-view .photo-info {
+            display: none;
+        }
+
+        /* Algemene foto card styling voor de beheerpagina */
+        .photos-grid:not(.album-view .photos-grid) .photo-card {
+            aspect-ratio: 1;
+        }
+
+        .photos-grid:not(.album-view .photos-grid) .photo-card img {
+            width: 100%;
+            height: calc(100% - 60px);
+            object-fit: cover;
+        }
+
+        .photos-grid:not(.album-view .photos-grid) .photo-info {
+            padding: 10px;
+            background: #f0f0f0;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .photo-info {
+            padding: 10px;
+            background: #f0f0f0;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .photo-info h3 {
+            margin: 0;
+            color: #333;
+            font-size: 14px;
+            flex-grow: 1;
+        }
+
+        .photo-card-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .photo-card-actions .btn-icon {
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .photo-card-actions .btn-icon:hover {
+            color: #333;
+            transform: scale(1.1);
+        }
+
+        .photo-card-actions .btn-icon.btn-danger {
+            color: #dc3545;
+        }
+
+        .photo-card-actions .btn-icon.btn-danger:hover {
+            color: #bd2130;
+        }
+    </style>
 </head>
 <body>
     <nav>
@@ -53,9 +396,17 @@
                     </div>
                 </div>
                 <div id="bulkActions" class="bulk-actions" style="display: none;">
+                    <div class="dropdown">
+                        <button class="btn btn-icon" onclick="showAlbumDropdown()" title="Toevoegen aan album">
+                            <i class="fas fa-plus"></i>
+                            <span id="selectedCount">0</span>
+                        </button>
+                        <div id="albumDropdown" class="dropdown-content">
+                            <!-- Albums worden hier dynamisch geladen -->
+                        </div>
+                    </div>
                     <button class="btn btn-icon btn-danger" onclick="deleteSelectedPhotos()" title="Verwijder geselecteerd">
                         <i class="fas fa-trash"></i>
-                        <span id="selectedCount">0</span>
                     </button>
                     <button class="btn btn-icon" onclick="deselectAll()" title="Deselecteer alles">
                         <i class="fas fa-times"></i>
@@ -201,10 +552,14 @@
                 ...options,
                 headers: {
                     ...options.headers,
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                    'Authorization': `Bearer ${token}`
                 }
             };
+
+            // Voeg Content-Type alleen toe als het geen FormData is
+            if (!(options.body instanceof FormData)) {
+                mergedOptions.headers['Content-Type'] = 'application/json';
+            }
 
             try {
                 const response = await fetch(url, mergedOptions);
@@ -427,52 +782,29 @@
             div.dataset.id = photo._id;
             
             div.innerHTML = `
-                <div class="selection-overlay">
-                    <div class="checkbox"></div>
-                </div>
                 <img src="${photo.path}" alt="${photo.title || 'Geen titel'}">
                 <div class="photo-info">
-                    <h3>${photo.title || 'Geen titel'}</h3>
-                    <p>${photo.album ? photo.album.title : 'Geen album'}</p>
-                    <div class="photo-actions">
-                        <button class="btn btn-icon edit-btn" title="Bewerken">
+                    <div class="photo-info-text">
+                        <h3>${photo.title || 'Geen titel'}</h3>
+                        <p>${photo.album ? photo.album.title : 'Geen album'}</p>
+                    </div>
+                    <div class="photo-card-actions">
+                        <button class="btn-icon" onclick="editPhoto('${photo._id}')" title="Bewerken">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-icon btn-danger delete-btn" title="Verwijderen">
+                        <button class="btn-icon btn-danger" onclick="deletePhoto('${photo._id}')" title="Verwijderen">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
                 </div>
             `;
 
-            // Event listeners
+            // Event listeners voor selectie modus
             div.addEventListener('click', (e) => {
-                if (isSelectMode || isAlbumSelectMode) {
+                if (isSelectMode && !e.target.closest('.photo-card-actions')) {
                     togglePhotoSelection(photo._id, e);
                 }
             });
-
-            const deleteBtn = div.querySelector('.delete-btn');
-            if (deleteBtn) {
-                deleteBtn.addEventListener('click', (e) => {
-                    if (!isSelectMode && !isAlbumSelectMode) {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        deletePhoto(photo._id);
-                    }
-                });
-            }
-
-            const editBtn = div.querySelector('.edit-btn');
-            if (editBtn) {
-                editBtn.addEventListener('click', (e) => {
-                    if (!isSelectMode && !isAlbumSelectMode) {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        editPhoto(photo._id);
-                    }
-                });
-            }
 
             return div;
         }
@@ -590,12 +922,15 @@
             });
 
             try {
-                const response = await fetchWithAuth('/api/upload', {
+                const response = await fetchWithAuth('/api/photos', {
                     method: 'POST',
                     body: formData
                 });
 
-                if (!response.ok) throw new Error('Upload mislukt');
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Upload mislukt');
+                }
 
                 showMessage('Foto\'s succesvol geüpload');
                 await loadPhotos(); // Herlaad de foto's
@@ -659,9 +994,6 @@
                     <h3>${album.title}</h3>
                     <p>${album.photos ? album.photos.length : 0} foto's</p>
                     <div class="album-actions">
-                        <button class="btn btn-icon add-photos-btn" title="Foto's toevoegen">
-                            <i class="fas fa-plus"></i>
-                        </button>
                         <button class="btn btn-icon edit-album-btn" title="Album bewerken">
                             <i class="fas fa-edit"></i>
                         </button>
@@ -673,23 +1005,24 @@
             `;
 
             // Event listeners
-            const addBtn = div.querySelector('.add-photos-btn');
-            if (addBtn) {
-                addBtn.addEventListener('click', () => {
-                    enterAlbumSelectMode(album._id);
-                });
-            }
+            div.addEventListener('click', (e) => {
+                if (!e.target.closest('.album-actions')) {
+                    openAlbum(album._id);
+                }
+            });
 
             const editBtn = div.querySelector('.edit-album-btn');
             if (editBtn) {
-                editBtn.addEventListener('click', () => {
+                editBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
                     editAlbum(album._id);
                 });
             }
 
             const deleteBtn = div.querySelector('.delete-album-btn');
             if (deleteBtn) {
-                deleteBtn.addEventListener('click', () => {
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
                     deleteAlbum(album._id);
                 });
             }
@@ -838,6 +1171,278 @@
             } catch (error) {
                 console.error('Error loading albums:', error);
                 showMessage('Fout bij het laden van albums', 'error');
+            }
+        }
+
+        async function showAlbumDropdown() {
+            const dropdown = document.getElementById('albumDropdown');
+            
+            try {
+                // Haal albums op
+                const response = await fetchWithAuth('/api/albums');
+                if (!response.ok) throw new Error('Fout bij ophalen albums');
+                
+                const albums = await response.json();
+                
+                // Vul dropdown met albums
+                dropdown.innerHTML = albums.map(album => `
+                    <a href="#" onclick="addSelectedToAlbum('${album._id}', '${album.title}')">${album.title}</a>
+                `).join('') || '<a class="disabled">Geen albums beschikbaar</a>';
+                
+                dropdown.style.display = 'block';
+                
+                // Sluit dropdown wanneer er ergens anders wordt geklikt
+                document.addEventListener('click', closeAlbumDropdown);
+            } catch (error) {
+                console.error('Error loading albums:', error);
+                showMessage('Fout bij laden van albums', 'error');
+            }
+        }
+
+        function closeAlbumDropdown(event) {
+            const dropdown = document.getElementById('albumDropdown');
+            const dropdownButton = document.querySelector('.dropdown button');
+            
+            if (!event.target.matches('.dropdown button, .dropdown button *')) {
+                dropdown.style.display = 'none';
+                document.removeEventListener('click', closeAlbumDropdown);
+            }
+        }
+
+        async function addSelectedToAlbum(albumId, albumTitle) {
+            if (selectedPhotos.size === 0) {
+                showMessage('Selecteer eerst foto\'s om toe te voegen', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetchWithAuth(`/api/albums/${albumId}/photos`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        photoIds: Array.from(selectedPhotos)
+                    })
+                });
+
+                if (!response.ok) throw new Error('Fout bij toevoegen aan album');
+
+                showMessage(`Foto's toegevoegd aan album "${albumTitle}"`);
+                deselectAll();
+                await loadAlbums(); // Ververs de albums
+            } catch (error) {
+                console.error('Error adding to album:', error);
+                showMessage('Fout bij toevoegen aan album', 'error');
+            }
+        }
+
+        async function openAlbum(albumId) {
+            try {
+                const response = await fetchWithAuth(`/api/albums/${albumId}`);
+                if (!response.ok) throw new Error('Fout bij ophalen album');
+                
+                const album = await response.json();
+                
+                // Toon album view
+                const mainContent = document.querySelector('main');
+                mainContent.innerHTML = `
+                    <div class="album-view">
+                        <div class="album-header">
+                            <button class="btn btn-icon" onclick="loadMainView()" title="Terug">
+                                <i class="fas fa-arrow-left"></i>
+                            </button>
+                            <h2>${album.title}</h2>
+                        </div>
+                        <div class="photos-grid" id="albumPhotosGrid">
+                            ${album.photos.map(photo => `
+                                <div class="photo-card" 
+                                    data-id="${photo._id}"
+                                    draggable="true"
+                                    ondragstart="handleDragStart(event)"
+                                    ondragend="handleDragEnd(event)"
+                                    ondragover="handleDragOver(event)"
+                                    ondrop="handleDrop(event)"
+                                    ondragenter="handleDragEnter(event)"
+                                    ondragleave="handleDragLeave(event)"
+                                >
+                                    <div class="remove-from-album" onclick="removeFromAlbum('${albumId}', '${photo._id}')">
+                                        <i class="fas fa-minus-circle"></i>
+                                    </div>
+                                    <img src="${photo.path}" alt="${photo.title || 'Geen titel'}">
+                                    <div class="photo-actions">
+                                        <button class="btn-icon" onclick="editPhoto('${photo._id}')" title="Bewerken">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn-icon btn-danger" onclick="deletePhoto('${photo._id}')" title="Verwijderen">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+
+                // Sla het huidige album ID op voor gebruik in drag & drop handlers
+                window.currentAlbumId = albumId;
+            } catch (error) {
+                console.error('Error opening album:', error);
+                showMessage('Fout bij openen album', 'error');
+            }
+        }
+
+        // Drag & Drop handlers
+        let draggedElement = null;
+
+        function handleDragStart(event) {
+            draggedElement = event.target.closest('.photo-card');
+            event.target.closest('.photo-card').classList.add('dragging');
+            event.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragEnd(event) {
+            event.target.closest('.photo-card').classList.remove('dragging');
+            document.querySelectorAll('.photo-card').forEach(card => {
+                card.classList.remove('drag-over');
+            });
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDragEnter(event) {
+            event.target.closest('.photo-card')?.classList.add('drag-over');
+        }
+
+        function handleDragLeave(event) {
+            event.target.closest('.photo-card')?.classList.remove('drag-over');
+        }
+
+        async function handleDrop(event) {
+            event.preventDefault();
+            const dropTarget = event.target.closest('.photo-card');
+            if (!dropTarget || dropTarget === draggedElement) return;
+
+            // Verwijder highlight classes
+            document.querySelectorAll('.photo-card').forEach(card => {
+                card.classList.remove('drag-over', 'dragging');
+            });
+
+            // Bepaal nieuwe volgorde
+            const photosGrid = document.getElementById('albumPhotosGrid');
+            const cards = Array.from(photosGrid.children);
+            const draggedIndex = cards.indexOf(draggedElement);
+            const dropIndex = cards.indexOf(dropTarget);
+
+            // Verplaats element in DOM
+            if (draggedIndex < dropIndex) {
+                dropTarget.parentNode.insertBefore(draggedElement, dropTarget.nextSibling);
+            } else {
+                dropTarget.parentNode.insertBefore(draggedElement, dropTarget);
+            }
+
+            // Update volgorde op server
+            try {
+                const photoIds = Array.from(photosGrid.children).map(card => card.dataset.id);
+                const response = await fetchWithAuth(`/api/albums/${window.currentAlbumId}/reorder`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ photoIds })
+                });
+
+                if (!response.ok) throw new Error('Fout bij updaten volgorde');
+                
+                showMessage('Volgorde bijgewerkt');
+            } catch (error) {
+                console.error('Error updating order:', error);
+                showMessage('Fout bij updaten volgorde', 'error');
+                // Bij fout, herlaad het album om de juiste volgorde te tonen
+                openAlbum(window.currentAlbumId);
+            }
+        }
+
+        async function loadMainView() {
+            try {
+                const mainContent = document.querySelector('main');
+                mainContent.innerHTML = `
+                    <section class="section">
+                        <h2>Foto's uploaden</h2>
+                        <div class="upload-zone" id="uploadZone">
+                            <p>Sleep foto's hierheen of klik om te uploaden</p>
+                        </div>
+                    </section>
+
+                    <section class="section">
+                        <h2>Albums</h2>
+                        <div class="albums-actions">
+                            <button class="btn btn-icon" onclick="createAlbum()" title="Nieuw album">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <div class="albums-grid" id="albumsGrid"></div>
+                    </section>
+
+                    <section class="section">
+                        <h2>Foto's beheren</h2>
+                        <div class="photos-actions">
+                            <div class="action-group">
+                                <button class="btn btn-icon" onclick="toggleSelectMode()" title="Selectie modus">
+                                    <i class="fas fa-check-square" id="selectModeIcon"></i>
+                                </button>
+                                <div class="thumbnail-size-control">
+                                    <i class="fas fa-image" title="Thumbnail grootte"></i>
+                                    <input type="range" id="thumbnailSize" min="100" max="400" value="200" step="50">
+                                    <span id="thumbnailSizeValue">200px</span>
+                                </div>
+                            </div>
+                            <div id="bulkActions" class="bulk-actions" style="display: none;">
+                                <div class="dropdown">
+                                    <button class="btn btn-icon" onclick="showAlbumDropdown()" title="Toevoegen aan album">
+                                        <i class="fas fa-plus"></i>
+                                        <span id="selectedCount">0</span>
+                                    </button>
+                                    <div id="albumDropdown" class="dropdown-content">
+                                        <!-- Albums worden hier dynamisch geladen -->
+                                    </div>
+                                </div>
+                                <button class="btn btn-icon btn-danger" onclick="deleteSelectedPhotos()" title="Verwijder geselecteerd">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                <button class="btn btn-icon" onclick="deselectAll()" title="Deselecteer alles">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="photos-grid" id="photosGrid"></div>
+                    </section>
+                `;
+
+                // Herinitialiseer alle functionaliteit
+                initializeUpload();
+                initializeThumbnailSizeControl();
+                await loadPhotos();
+                await loadAlbums();
+            } catch (error) {
+                console.error('Error loading main view:', error);
+                showMessage('Fout bij laden hoofdweergave', 'error');
+            }
+        }
+
+        async function removeFromAlbum(albumId, photoId) {
+            try {
+                const response = await fetchWithAuth(`/api/albums/${albumId}/photos`, {
+                    method: 'DELETE',
+                    body: JSON.stringify({
+                        photoIds: [photoId]
+                    })
+                });
+
+                if (!response.ok) throw new Error('Fout bij verwijderen uit album');
+
+                showMessage('Foto verwijderd uit album');
+                openAlbum(albumId); // Ververs het album
+            } catch (error) {
+                console.error('Error removing from album:', error);
+                showMessage('Fout bij verwijderen uit album', 'error');
             }
         }
 
