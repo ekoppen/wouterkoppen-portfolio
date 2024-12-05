@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const Photo = require('../models/Photo');
 const auth = require('../middleware/auth');
+const Album = require('../models/Album');
 
 // Configureer multer voor foto uploads
 const storage = multer.diskStorage({
@@ -34,6 +35,27 @@ const upload = multer({
             return cb(new Error('Alleen afbeeldingen zijn toegestaan'));
         }
         cb(null, true);
+    }
+});
+
+// Alle foto's ophalen
+router.get('/', auth, async (req, res) => {
+    try {
+        const photos = await Photo.find().sort({ createdAt: -1 });
+        
+        // Zoek voor elke foto het bijbehorende album
+        const photosWithAlbums = await Promise.all(photos.map(async (photo) => {
+            const album = await Album.findOne({ photos: photo._id });
+            return {
+                ...photo.toObject(),
+                album: album ? { _id: album._id, title: album.title } : null
+            };
+        }));
+        
+        res.json(photosWithAlbums);
+    } catch (error) {
+        console.error('Error fetching photos:', error);
+        res.status(500).json({ error: 'Fout bij ophalen foto\'s' });
     }
 });
 
@@ -68,6 +90,31 @@ router.post('/', auth, upload.single('photo'), async (req, res) => {
     }
 });
 
+// Foto bewerken
+router.put('/:id', auth, async (req, res) => {
+    try {
+        const { title } = req.body;
+        if (!title) {
+            return res.status(400).json({ error: 'Titel is verplicht' });
+        }
+
+        const photo = await Photo.findByIdAndUpdate(
+            req.params.id,
+            { title },
+            { new: true }
+        );
+
+        if (!photo) {
+            return res.status(404).json({ error: 'Foto niet gevonden' });
+        }
+
+        res.json(photo);
+    } catch (error) {
+        console.error('Error updating photo:', error);
+        res.status(500).json({ error: 'Fout bij bijwerken van foto' });
+    }
+});
+
 // Foto verwijderen
 router.delete('/:id', auth, async (req, res) => {
     try {
@@ -78,19 +125,19 @@ router.delete('/:id', auth, async (req, res) => {
 
         // Verwijder bestand
         const filePath = path.join('public', photo.path);
-        fs.unlink(filePath, async (err) => {
-            if (err) {
-                console.error('Error deleting file:', err);
-                // Ga door met verwijderen van database entry zelfs als bestand niet gevonden wordt
-                if (err.code !== 'ENOENT') {
-                    return res.status(500).json({ error: 'Fout bij verwijderen bestand' });
-                }
+        try {
+            await fs.promises.unlink(filePath);
+        } catch (err) {
+            console.error('Error deleting file:', err);
+            // Ga door met verwijderen van database entry zelfs als bestand niet gevonden wordt
+            if (err.code !== 'ENOENT') {
+                return res.status(500).json({ error: 'Fout bij verwijderen bestand' });
             }
+        }
 
-            // Verwijder database entry
-            await photo.remove();
-            res.json({ message: 'Foto succesvol verwijderd' });
-        });
+        // Verwijder database entry
+        await Photo.findByIdAndDelete(photo._id);
+        res.json({ message: 'Foto succesvol verwijderd' });
     } catch (error) {
         console.error('Error deleting photo:', error);
         res.status(500).json({ error: 'Fout bij verwijderen foto' });

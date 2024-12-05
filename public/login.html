@@ -5,13 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Wouter Koppen Fotografie</title>
     <link rel="stylesheet" href="/css/style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
         .login-container {
             max-width: 400px;
-            margin: 2rem auto;
+            margin: 100px auto;
             padding: 2rem;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 8px;
@@ -33,28 +30,15 @@
             border: 1px solid #444;
             border-radius: 4px;
             color: var(--text-color);
-            font-family: inherit;
         }
 
         .error-message {
-            color: #f56565;
-            margin: 1rem 0;
-            padding: 0.5rem;
-            background: rgba(245, 101, 101, 0.1);
-            border-radius: 4px;
+            color: #ef4444;
+            margin-bottom: 1rem;
             display: none;
         }
 
-        .success-message {
-            color: #48bb78;
-            margin: 1rem 0;
-            padding: 0.5rem;
-            background: rgba(72, 187, 120, 0.1);
-            border-radius: 4px;
-            display: none;
-        }
-
-        .submit-btn {
+        .btn {
             width: 100%;
             padding: 0.75rem;
             background: #2563eb;
@@ -62,230 +46,109 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-family: inherit;
             font-size: 1rem;
-            transition: background-color 0.3s ease;
         }
 
-        .submit-btn:hover {
+        .btn:hover {
             background: #1d4ed8;
         }
 
-        .submit-btn:disabled {
-            background: #4a5568;
+        .btn:disabled {
+            background: #4b5563;
             cursor: not-allowed;
-        }
-
-        .password-requirements {
-            margin-top: 0.5rem;
-            font-size: 0.9rem;
-            color: #666;
-        }
-
-        .password-requirements ul {
-            margin: 0.5rem 0 0 1.5rem;
-            padding: 0;
-        }
-
-        .password-requirements li {
-            margin: 0.2rem 0;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background: var(--primary-color);
-            padding: 2rem;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 500px;
-            position: relative;
         }
     </style>
 </head>
 <body>
-    <nav>
-        <div class="logo">Wouter Koppen</div>
-        <div class="menu">
-            <a href="/">Portfolio</a>
-        </div>
-    </nav>
-
-    <main>
-        <div class="login-container">
-            <!-- Login formulier -->
-            <form id="loginForm">
-                <h2>Inloggen</h2>
-                <div id="error-container" class="error-message"></div>
-                <div id="success-container" class="success-message"></div>
-                
-                <div class="form-group">
-                    <label for="username">Gebruikersnaam</label>
-                    <input type="text" id="username" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="password">Wachtwoord</label>
-                    <input type="password" id="password" required>
-                </div>
-                
-                <button type="submit" class="submit-btn">Inloggen</button>
-            </form>
-        </div>
-
-        <!-- Wachtwoord wijzigen modal -->
-        <div id="changePasswordModal" class="modal">
-            <div class="modal-content">
-                <h2>Wachtwoord wijzigen</h2>
-                <p>Je moet je wachtwoord wijzigen voordat je verder kunt gaan.</p>
-                
-                <form id="changePasswordForm">
-                    <div class="form-group">
-                        <label for="currentPassword">Huidig wachtwoord</label>
-                        <input type="password" id="currentPassword" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="newPassword">Nieuw wachtwoord</label>
-                        <input type="password" id="newPassword" required>
-                        <div class="password-requirements">
-                            <small>Wachtwoord moet bevatten:</small>
-                            <ul>
-                                <li>Minimaal 8 karakters</li>
-                                <li>Minimaal één hoofdletter</li>
-                                <li>Minimaal één kleine letter</li>
-                                <li>Minimaal één cijfer</li>
-                                <li>Minimaal één speciaal karakter (!@#$%^&*(),.?":{}|<>)</li>
-                            </ul>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="confirmPassword">Bevestig nieuw wachtwoord</label>
-                        <input type="password" id="confirmPassword" required>
-                    </div>
-                    
-                    <button type="submit" class="submit-btn">Wachtwoord wijzigen</button>
-                </form>
+    <div class="login-container">
+        <h1>Login</h1>
+        <div id="error" class="error-message"></div>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Gebruikersnaam</label>
+                <input type="text" id="username" required>
             </div>
-        </div>
-    </main>
+            <div class="form-group">
+                <label for="password">Wachtwoord</label>
+                <input type="password" id="password" required>
+            </div>
+            <button type="submit" class="btn" id="submitBtn">Inloggen</button>
+        </form>
+    </div>
 
     <script>
-        // Helper functies voor meldingen
+        const loginForm = document.getElementById('loginForm');
+        const errorDiv = document.getElementById('error');
+        const submitBtn = document.getElementById('submitBtn');
+
         function showError(message) {
-            const container = document.getElementById('error-container');
-            container.textContent = message;
-            container.style.display = 'block';
-            setTimeout(() => container.style.display = 'none', 5000);
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
         }
 
-        function showSuccess(message) {
-            const container = document.getElementById('success-container');
-            container.textContent = message;
-            container.style.display = 'block';
-            setTimeout(() => container.style.display = 'none', 3000);
-        }
-
-        // Login functionaliteit
-        document.getElementById('loginForm').addEventListener('submit', async (event) => {
-            event.preventDefault();
-            
-            const submitBtn = event.target.querySelector('button[type="submit"]');
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Inloggen...';
-            
+            errorDiv.style.display = 'none';
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
             try {
-                const username = document.getElementById('username').value;
-                const password = document.getElementById('password').value;
-                
                 const response = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    credentials: 'include',
                     body: JSON.stringify({ username, password })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (!response.ok) {
-                    throw new Error(data.error || 'Fout bij inloggen');
+                    throw new Error(data.error || 'Login mislukt');
                 }
-                
-                if (data.passwordResetRequired) {
-                    // Toon wachtwoord wijzigen modal
-                    document.getElementById('changePasswordModal').style.display = 'flex';
-                } else {
-                    // Redirect naar admin pagina
-                    window.location.href = 'admin.html';
-                }
+
+                // Sla token op
+                localStorage.setItem('token', data.token);
+
+                // Redirect naar admin pagina
+                window.location.href = '/admin';
             } catch (error) {
                 console.error('Login error:', error);
                 showError(error.message);
-            } finally {
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Inloggen';
             }
         });
 
-        // Wachtwoord wijzigen functionaliteit
-        document.getElementById('changePasswordForm').addEventListener('submit', async (event) => {
-            event.preventDefault();
-            
-            const submitBtn = event.target.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Wachtwoord wijzigen...';
-            
+        // Check of gebruiker al is ingelogd
+        async function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
             try {
-                const currentPassword = document.getElementById('currentPassword').value;
-                const newPassword = document.getElementById('newPassword').value;
-                const confirmPassword = document.getElementById('confirmPassword').value;
-                
-                if (newPassword !== confirmPassword) {
-                    throw new Error('Nieuwe wachtwoorden komen niet overeen');
-                }
-                
-                const response = await fetch('/api/users/change-password', {
-                    method: 'POST',
+                const response = await fetch('/api/auth/verify', {
                     headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({ currentPassword, newPassword })
+                        'Authorization': `Bearer ${token}`
+                    }
                 });
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error || 'Fout bij wijzigen wachtwoord');
+
+                if (response.ok) {
+                    window.location.href = '/admin';
+                } else {
+                    localStorage.removeItem('token');
                 }
-                
-                showSuccess('Wachtwoord succesvol gewijzigd');
-                setTimeout(() => {
-                    // Redirect naar admin pagina
-                    window.location.href = 'admin.html';
-                }, 1500);
             } catch (error) {
-                console.error('Change password error:', error);
-                showError(error.message);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Wachtwoord wijzigen';
+                console.error('Auth check error:', error);
+                localStorage.removeItem('token');
             }
-        });
+        }
+
+        // Check auth status bij laden
+        checkAuth();
     </script>
 </body>
 </html> 

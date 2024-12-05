@@ -6,113 +6,120 @@ const auth = require('../middleware/auth');
 // Alle albums ophalen
 router.get('/', auth, async (req, res) => {
     try {
-        const albums = await Album.find().populate('photos coverPhoto').sort('order');
+        const albums = await Album.find().populate('photos');
         res.json(albums);
     } catch (error) {
         console.error('Error fetching albums:', error);
-        res.status(500).json({ error: 'Fout bij ophalen albums' });
-    }
-});
-
-// Specifiek album ophalen
-router.get('/:id', auth, async (req, res) => {
-    try {
-        const album = await Album.findById(req.params.id).populate('photos coverPhoto');
-        if (!album) {
-            return res.status(404).json({ error: 'Album niet gevonden' });
-        }
-        res.json(album);
-    } catch (error) {
-        console.error('Error fetching album:', error);
-        res.status(500).json({ error: 'Fout bij ophalen album' });
+        res.status(500).json({ error: 'Fout bij ophalen van albums' });
     }
 });
 
 // Nieuw album aanmaken
 router.post('/', auth, async (req, res) => {
     try {
-        const { title, description, photos } = req.body;
-        
-        const lastAlbum = await Album.findOne().sort('-order');
-        const order = lastAlbum ? lastAlbum.order + 1 : 0;
-        
-        const album = new Album({
-            title,
-            description,
-            photos,
-            order,
-            coverPhoto: photos && photos.length > 0 ? photos[0] : null
-        });
-        
+        const { title } = req.body;
+        if (!title) {
+            return res.status(400).json({ error: 'Titel is verplicht' });
+        }
+
+        const album = new Album({ title });
         await album.save();
-        
-        const populatedAlbum = await Album.findById(album._id).populate('photos coverPhoto');
-        res.status(201).json(populatedAlbum);
+        res.status(201).json(album);
     } catch (error) {
         console.error('Error creating album:', error);
-        res.status(500).json({ error: 'Fout bij aanmaken album' });
+        res.status(500).json({ error: 'Fout bij maken van album' });
     }
 });
 
 // Album bijwerken
 router.put('/:id', auth, async (req, res) => {
     try {
-        const { title, description, photos } = req.body;
-        
-        const album = await Album.findById(req.params.id);
+        const { title } = req.body;
+        if (!title) {
+            return res.status(400).json({ error: 'Titel is verplicht' });
+        }
+
+        const album = await Album.findByIdAndUpdate(
+            req.params.id,
+            { title },
+            { new: true }
+        );
+
         if (!album) {
             return res.status(404).json({ error: 'Album niet gevonden' });
         }
-        
-        album.title = title;
-        album.description = description;
-        album.photos = photos;
-        album.coverPhoto = photos && photos.length > 0 ? photos[0] : null;
-        
-        await album.save();
-        
-        const populatedAlbum = await Album.findById(album._id).populate('photos coverPhoto');
-        res.json(populatedAlbum);
+
+        res.json(album);
     } catch (error) {
         console.error('Error updating album:', error);
-        res.status(500).json({ error: 'Fout bij bijwerken album' });
+        res.status(500).json({ error: 'Fout bij bijwerken van album' });
     }
 });
 
 // Album verwijderen
 router.delete('/:id', auth, async (req, res) => {
     try {
-        const album = await Album.findById(req.params.id);
+        const album = await Album.findByIdAndDelete(req.params.id);
         if (!album) {
             return res.status(404).json({ error: 'Album niet gevonden' });
         }
-        
-        await album.remove();
         res.json({ message: 'Album succesvol verwijderd' });
     } catch (error) {
         console.error('Error deleting album:', error);
-        res.status(500).json({ error: 'Fout bij verwijderen album' });
+        res.status(500).json({ error: 'Fout bij verwijderen van album' });
     }
 });
 
-// Foto volgorde bijwerken
-router.put('/:id/reorder', auth, async (req, res) => {
+// Foto's toevoegen aan album
+router.post('/:id/photos', auth, async (req, res) => {
     try {
         const { photoIds } = req.body;
-        
+        if (!photoIds || !Array.isArray(photoIds)) {
+            return res.status(400).json({ error: 'Foto IDs zijn verplicht' });
+        }
+
         const album = await Album.findById(req.params.id);
         if (!album) {
             return res.status(404).json({ error: 'Album niet gevonden' });
         }
+
+        // Voeg nieuwe foto's toe en verwijder duplicaten
+        const uniquePhotos = new Set([...album.photos.map(p => p.toString()), ...photoIds]);
+        album.photos = Array.from(uniquePhotos);
         
-        album.photos = photoIds;
         await album.save();
         
-        const populatedAlbum = await Album.findById(album._id).populate('photos coverPhoto');
-        res.json(populatedAlbum);
+        // Haal het bijgewerkte album op met foto details
+        const updatedAlbum = await Album.findById(req.params.id).populate('photos');
+        res.json(updatedAlbum);
     } catch (error) {
-        console.error('Error reordering photos:', error);
-        res.status(500).json({ error: 'Fout bij updaten foto volgorde' });
+        console.error('Error adding photos to album:', error);
+        res.status(500).json({ error: 'Fout bij toevoegen van foto\'s aan album' });
+    }
+});
+
+// Foto's verwijderen uit album
+router.delete('/:id/photos', auth, async (req, res) => {
+    try {
+        const { photoIds } = req.body;
+        if (!photoIds || !Array.isArray(photoIds)) {
+            return res.status(400).json({ error: 'Foto IDs zijn verplicht' });
+        }
+
+        const album = await Album.findById(req.params.id);
+        if (!album) {
+            return res.status(404).json({ error: 'Album niet gevonden' });
+        }
+
+        album.photos = album.photos.filter(p => !photoIds.includes(p.toString()));
+        await album.save();
+        
+        // Haal het bijgewerkte album op met foto details
+        const updatedAlbum = await Album.findById(req.params.id).populate('photos');
+        res.json(updatedAlbum);
+    } catch (error) {
+        console.error('Error removing photos from album:', error);
+        res.status(500).json({ error: 'Fout bij verwijderen van foto\'s uit album' });
     }
 });
 

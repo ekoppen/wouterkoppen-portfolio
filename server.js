@@ -1,7 +1,5 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const session = require('express-session');
-const MongoStore = require('connect-mongo');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const User = require('./models/User');
@@ -24,31 +22,18 @@ mongoose.connect(process.env.MONGODB_URI, {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Sessie configuratie
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'een-zeer-geheim-wachtwoord',
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({
-        mongoUrl: process.env.MONGODB_URI,
-        ttl: 24 * 60 * 60 // 1 dag
-    }),
-    cookie: {
-        secure: process.env.NODE_ENV === 'production',
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000 // 1 dag
-    }
-}));
-
 // Statische bestanden
 app.use(express.static('public'));
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/users', require('./routes/users'));
-app.use('/api/upload', require('./routes/upload'));
-app.use('/api/albums', require('./routes/albums'));
+// API Routes
+const authRoutes = require('./routes/auth');
+const uploadRoutes = require('./routes/upload');
+const albumRoutes = require('./routes/albums');
+
+app.use('/api/auth', authRoutes);
+app.use('/api/photos', uploadRoutes);
+app.use('/api/albums', albumRoutes);
 
 // Admin gebruiker aanmaken als deze nog niet bestaat
 async function createAdminUser() {
@@ -71,20 +56,21 @@ async function createAdminUser() {
     }
 }
 
-// HTML routes
+// Frontend routes
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 app.get('/admin', (req, res) => {
-    if (!req.session.userId) {
-        return res.redirect('/login');
-    }
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// Serve SPA voor overige routes
+// Alle andere routes naar index.html (voor client-side routing)
 app.get('*', (req, res) => {
+    // Stuur geen index.html voor API routes
+    if (req.url.startsWith('/api/')) {
+        return res.status(404).json({ error: 'Not found' });
+    }
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 

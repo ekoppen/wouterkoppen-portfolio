@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 
@@ -21,12 +22,16 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'Ongeldige inloggegevens' });
         }
 
-        // Maak sessie aan
-        req.session.userId = user._id;
-        req.session.username = user.username;
+        // Genereer JWT token
+        const token = jwt.sign(
+            { userId: user._id, username: user.username },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
 
-        res.json({ 
+        res.json({
             message: 'Succesvol ingelogd',
+            token,
             user: {
                 id: user._id,
                 username: user.username
@@ -38,27 +43,9 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// Check auth status
-router.get('/check', auth, (req, res) => {
-    res.json({ 
-        isAuthenticated: true,
-        user: {
-            id: req.session.userId,
-            username: req.session.username
-        }
-    });
-});
-
-// Logout route
-router.post('/logout', (req, res) => {
-    req.session.destroy(err => {
-        if (err) {
-            console.error('Logout error:', err);
-            return res.status(500).json({ error: 'Fout bij uitloggen' });
-        }
-        res.clearCookie('connect.sid');
-        res.json({ message: 'Succesvol uitgelogd' });
-    });
+// Verify token route
+router.get('/verify', auth, (req, res) => {
+    res.json({ valid: true });
 });
 
 module.exports = router; 

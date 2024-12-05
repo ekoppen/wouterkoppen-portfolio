@@ -3,223 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Beheer - Wouter Koppen Fotografie</title>
+    <title>Admin - Wouter Koppen Fotografie</title>
     <link rel="stylesheet" href="/css/style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500&display=swap" rel="stylesheet">
-    <style>
-        body {
-            min-height: 100vh;
-            margin: 0;
-            padding: 0;
-            overflow-y: auto;
-        }
-
-        nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem 2rem;
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .nav-right {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        main.admin-panel {
-            padding: 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-            min-height: calc(100vh - 80px);
-        }
-
-        .section {
-            margin-bottom: 3rem;
-            padding: 2rem;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-        }
-
-        .section h2 {
-            margin-top: 0;
-            margin-bottom: 1.5rem;
-        }
-
-        .upload-zone {
-            border: 2px dashed #666;
-            border-radius: 8px;
-            padding: 2rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 2rem;
-        }
-
-        .upload-zone:hover,
-        .upload-zone.dragover {
-            border-color: #2563eb;
-            background: rgba(37, 99, 235, 0.1);
-        }
-
-        .photos-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-
-        .photo-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .photo-card img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-        }
-
-        .photo-info {
-            padding: 1rem;
-        }
-
-        .photo-info h3 {
-            margin: 0 0 0.5rem 0;
-            font-size: 1rem;
-        }
-
-        .photo-info p {
-            margin: 0;
-            font-size: 0.9rem;
-            opacity: 0.7;
-        }
-
-        .users-management {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 0.5rem;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid #444;
-            border-radius: 4px;
-            color: var(--text-color);
-        }
-
-        .user-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 4px;
-            margin-bottom: 0.5rem;
-        }
-
-        .user-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: background-color 0.3s ease;
-        }
-
-        .btn-primary {
-            background: #2563eb;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #1d4ed8;
-        }
-
-        .btn-danger {
-            background: #dc2626;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #b91c1c;
-        }
-
-        .btn-secondary {
-            background: #4b5563;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #374151;
-        }
-
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 1rem 2rem;
-            border-radius: 4px;
-            color: white;
-            opacity: 0;
-            transform: translateY(100%);
-            transition: all 0.3s ease;
-            z-index: 9999;
-        }
-
-        .toast.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .toast.error {
-            background: #dc2626;
-        }
-
-        .toast.success {
-            background: #059669;
-        }
-
-        @media (max-width: 768px) {
-            .users-management {
-                grid-template-columns: 1fr;
-            }
-
-            main.admin-panel {
-                padding: 1rem;
-            }
-
-            .photos-grid {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 </head>
 <body>
     <nav>
         <div class="logo">Wouter Koppen</div>
         <div class="nav-right">
             <a href="/">Portfolio</a>
-            <button onclick="logout()" class="btn btn-secondary">Uitloggen</button>
+            <button onclick="logout()" class="btn btn-icon" title="Uitloggen">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
         </div>
     </nav>
 
@@ -232,54 +28,204 @@
         </section>
 
         <section class="section">
-            <h2>Foto's beheren</h2>
-            <div class="photos-grid" id="photosGrid">
-                <!-- Foto's worden hier dynamisch geladen -->
+            <h2>Albums</h2>
+            <div class="albums-actions">
+                <button class="btn btn-icon" onclick="createAlbum()" title="Nieuw album">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <div class="albums-grid" id="albumsGrid">
+                <!-- Albums worden hier dynamisch geladen -->
             </div>
         </section>
 
         <section class="section">
-            <h2>Gebruikers beheren</h2>
-            <div class="users-management">
-                <div class="add-user">
-                    <h3>Nieuwe gebruiker toevoegen</h3>
-                    <form id="addUserForm">
-                        <div class="form-group">
-                            <label for="newUsername">Gebruikersnaam</label>
-                            <input type="text" id="newUsername" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="newPassword">Wachtwoord</label>
-                            <input type="password" id="newPassword" required>
-                            <div class="password-requirements">
-                                <small>Wachtwoord moet bevatten:</small>
-                                <ul>
-                                    <li>Minimaal 8 karakters</li>
-                                    <li>Minimaal één hoofdletter</li>
-                                    <li>Minimaal één kleine letter</li>
-                                    <li>Minimaal één cijfer</li>
-                                    <li>Minimaal één speciaal karakter (!@#$%^&*(),.?":{}|<>)</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Toevoegen</button>
-                    </form>
-                </div>
-                <div class="users-list">
-                    <h3>Bestaande gebruikers</h3>
-                    <div id="usersList">
-                        <!-- Gebruikers worden hier dynamisch geladen -->
+            <h2>Foto's beheren</h2>
+            <div class="photos-actions">
+                <div class="action-group">
+                    <button class="btn btn-icon" onclick="toggleSelectMode()" title="Selectie modus">
+                        <i class="fas fa-check-square" id="selectModeIcon"></i>
+                    </button>
+                    <div class="thumbnail-size-control">
+                        <i class="fas fa-image" title="Thumbnail grootte"></i>
+                        <input type="range" id="thumbnailSize" min="100" max="400" value="200" step="50">
+                        <span id="thumbnailSizeValue">200px</span>
                     </div>
                 </div>
+                <div id="bulkActions" class="bulk-actions" style="display: none;">
+                    <button class="btn btn-icon btn-danger" onclick="deleteSelectedPhotos()" title="Verwijder geselecteerd">
+                        <i class="fas fa-trash"></i>
+                        <span id="selectedCount">0</span>
+                    </button>
+                    <button class="btn btn-icon" onclick="deselectAll()" title="Deselecteer alles">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="photos-grid" id="photosGrid">
+                <!-- Foto's worden hier dynamisch geladen -->
             </div>
         </section>
     </main>
 
+    <div class="overlay" id="overlay"></div>
+    <div class="confirm-dialog" id="confirmDialog">
+        <div class="confirm-dialog-content">
+            <p id="confirmMessage">Weet je zeker dat je deze foto wilt verwijderen?</p>
+            <div class="confirm-dialog-buttons">
+                <button class="btn btn-danger" id="confirmDelete">Verwijderen</button>
+                <button class="btn btn-secondary" id="cancelDelete">Annuleren</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Helper functies voor meldingen
-        function showError(message) {
+        let isSelectMode = false;
+        let selectedPhotos = new Set();
+
+        function toggleSelectMode() {
+            isSelectMode = !isSelectMode;
+            const selectModeIcon = document.getElementById('selectModeIcon');
+            const bulkActions = document.getElementById('bulkActions');
+            const photoCards = document.querySelectorAll('.photo-card');
+
+            selectModeIcon.className = isSelectMode ? 'fas fa-times' : 'fas fa-check-square';
+            bulkActions.style.display = isSelectMode ? 'flex' : 'none';
+
+            photoCards.forEach(card => {
+                card.classList.toggle('selectable', isSelectMode);
+                if (!isSelectMode) {
+                    card.classList.remove('selected');
+                }
+            });
+
+            if (!isSelectMode) {
+                selectedPhotos.clear();
+                updateSelectedCount();
+            }
+        }
+
+        function togglePhotoSelection(photoId, event) {
+            if (!isSelectMode) return;
+            
+            event.preventDefault();
+            event.stopPropagation();
+
+            const photoCard = document.querySelector(`.photo-card[data-id="${photoId}"]`);
+            if (selectedPhotos.has(photoId)) {
+                selectedPhotos.delete(photoId);
+                photoCard.classList.remove('selected');
+            } else {
+                selectedPhotos.add(photoId);
+                photoCard.classList.add('selected');
+            }
+            
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const countElement = document.getElementById('selectedCount');
+            countElement.textContent = selectedPhotos.size;
+        }
+
+        function deselectAll() {
+            selectedPhotos.clear();
+            document.querySelectorAll('.photo-card.selected').forEach(card => {
+                card.classList.remove('selected');
+            });
+            updateSelectedCount();
+        }
+
+        async function deleteSelectedPhotos() {
+            if (selectedPhotos.size === 0) return;
+
+            const message = `Weet je zeker dat je ${selectedPhotos.size} foto's wilt verwijderen?`;
+            document.getElementById('confirmMessage').textContent = message;
+
+            showConfirmDialog(async (confirmed) => {
+                if (!confirmed) return;
+
+                try {
+                    const errors = [];
+                    for (const photoId of selectedPhotos) {
+                        try {
+                            const response = await fetchWithAuth(`/api/photos/${photoId}`, {
+                                method: 'DELETE'
+                            });
+
+                            if (!response.ok) {
+                                const data = await response.json();
+                                throw new Error(data.error || `HTTP error! status: ${response.status}`);
+                            }
+
+                            const photoElement = document.querySelector(`.photo-card[data-id="${photoId}"]`);
+                            if (photoElement) {
+                                photoElement.remove();
+                            }
+                        } catch (error) {
+                            console.error(`Error deleting photo ${photoId}:`, error);
+                            errors.push(photoId);
+                        }
+                    }
+
+                    if (errors.length === 0) {
+                        showMessage(`${selectedPhotos.size} foto's succesvol verwijderd`);
+                        selectedPhotos.clear();
+                        updateSelectedCount();
+                    } else {
+                        showMessage(`Fout bij verwijderen van ${errors.length} foto's`, 'error');
+                        // Herlaad de foto's om de UI te synchroniseren
+                        await loadPhotos();
+                    }
+                } catch (error) {
+                    console.error('Bulk delete error:', error);
+                    showMessage('Fout bij verwijderen van foto\'s', 'error');
+                    await loadPhotos();
+                } finally {
+                    if (isSelectMode) {
+                        toggleSelectMode();
+                    }
+                }
+            });
+        }
+
+        // Helper functie voor authenticated API calls
+        async function fetchWithAuth(url, options = {}) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            const mergedOptions = {
+                ...options,
+                headers: {
+                    ...options.headers,
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            };
+
+            try {
+                const response = await fetch(url, mergedOptions);
+                
+                if (response.status === 401) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login.html';
+                    return;
+                }
+
+                return response;
+            } catch (error) {
+                console.error('Fetch error:', error);
+                throw error;
+            }
+        }
+
+        // Helper functie voor meldingen
+        function showMessage(message, type = 'success') {
             const toast = document.createElement('div');
-            toast.className = 'toast error';
+            toast.className = `toast ${type}`;
             toast.textContent = message;
             document.body.appendChild(toast);
             
@@ -292,43 +238,303 @@
             }, 100);
         }
 
-        function showSuccess(message) {
-            const toast = document.createElement('div');
-            toast.className = 'toast success';
-            toast.textContent = message;
-            document.body.appendChild(toast);
+        // Bevestigingsdialoog functies
+        let isDeleting = false; // Voorkom dubbele delete acties
+
+        function showConfirmDialog(callback, options = {}) {
+            const overlay = document.getElementById('overlay');
+            const dialog = document.getElementById('confirmDialog');
+            const content = dialog.querySelector('.confirm-dialog-content');
             
-            setTimeout(() => {
-                toast.classList.add('show');
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                    setTimeout(() => toast.remove(), 300);
-                }, 3000);
-            }, 100);
+            // Reset en vul dialog content
+            content.innerHTML = `
+                <p id="confirmMessage">${options.message}</p>
+                ${options.inputField ? `
+                    <input type="text" id="dialogInput" class="dialog-input" 
+                        value="${options.inputValue || ''}" 
+                        placeholder="Voer een naam in">
+                ` : ''}
+                <div class="confirm-dialog-buttons">
+                    <button class="btn ${options.isDangerous ? 'btn-danger' : 'btn-primary'}" id="confirmButton">
+                        ${options.confirmText || 'Bevestigen'}
+                    </button>
+                    <button class="btn btn-secondary" id="cancelButton">
+                        ${options.cancelText || 'Annuleren'}
+                    </button>
+                </div>
+            `;
+
+            // Toon dialog
+            overlay.classList.add('show');
+            dialog.classList.add('show');
+
+            // Focus input als aanwezig
+            const input = dialog.querySelector('#dialogInput');
+            if (input) {
+                input.focus();
+                input.select();
+            }
+
+            // Event handlers
+            const handleConfirm = () => {
+                const value = input ? input.value.trim() : null;
+                hideConfirmDialog();
+                callback(true, value);
+            };
+
+            const handleCancel = () => {
+                hideConfirmDialog();
+                callback(false);
+            };
+
+            const confirmButton = dialog.querySelector('#confirmButton');
+            const cancelButton = dialog.querySelector('#cancelButton');
+
+            confirmButton.addEventListener('click', handleConfirm);
+            cancelButton.addEventListener('click', handleCancel);
+
+            // Enter/Escape toetsen
+            const handleKeydown = (e) => {
+                if (e.key === 'Enter' && (!input || input.value.trim())) {
+                    handleConfirm();
+                } else if (e.key === 'Escape') {
+                    handleCancel();
+                }
+            };
+            document.addEventListener('keydown', handleKeydown);
+
+            // Cleanup functie
+            return () => {
+                confirmButton.removeEventListener('click', handleConfirm);
+                cancelButton.removeEventListener('click', handleCancel);
+                document.removeEventListener('keydown', handleKeydown);
+            };
         }
 
-        // Foto's laden
+        function hideConfirmDialog() {
+            const overlay = document.getElementById('overlay');
+            const dialog = document.getElementById('confirmDialog');
+            
+            overlay.classList.remove('show');
+            dialog.classList.remove('show');
+        }
+
+        // Foto bewerken
+        async function editPhoto(photoId) {
+            const photo = photos.find(p => p._id === photoId);
+            if (!photo) return;
+
+            showConfirmDialog(async (confirmed, value) => {
+                if (!confirmed || !value) return;
+
+                try {
+                    const response = await fetchWithAuth(`/api/photos/${photoId}`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ title: value })
+                    });
+
+                    if (!response.ok) throw new Error('Fout bij bewerken van foto');
+
+                    await loadPhotos();
+                    showMessage('Foto succesvol bijgewerkt');
+                } catch (error) {
+                    console.error('Error editing photo:', error);
+                    showMessage('Fout bij bewerken van foto', 'error');
+                }
+            }, {
+                message: 'Geef een nieuwe titel voor de foto:',
+                inputField: true,
+                inputValue: photo.title || '',
+                confirmText: 'Opslaan',
+                cancelText: 'Annuleren'
+            });
+        }
+
+        // Foto verwijderen
+        async function deletePhoto(photoId) {
+            if (isDeleting) return;
+
+            showConfirmDialog(async (confirmed) => {
+                if (!confirmed) return;
+
+                try {
+                    isDeleting = true;
+                    const response = await fetchWithAuth(`/api/photos/${photoId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Fout bij verwijderen van foto');
+                    }
+
+                    const data = await response.json();
+                    showMessage(data.message || 'Foto succesvol verwijderd');
+                    
+                    // Wacht even voordat we de foto's opnieuw laden
+                    setTimeout(async () => {
+                        try {
+                            await loadPhotos();
+                        } catch (loadError) {
+                            console.error('Error reloading photos:', loadError);
+                            showMessage('Fout bij het verversen van de foto\'s', 'error');
+                        }
+                    }, 500);
+                } catch (error) {
+                    console.error('Delete error:', error);
+                    showMessage('Fout bij verwijderen van foto', 'error');
+                } finally {
+                    isDeleting = false;
+                }
+            }, {
+                message: 'Weet je zeker dat je deze foto wilt verwijderen?',
+                confirmText: 'Verwijderen',
+                cancelText: 'Annuleren',
+                isDangerous: true
+            });
+        }
+
+        // Update de loadPhotos functie
+        let photos = []; // Global photos array
         async function loadPhotos() {
             try {
-                const response = await fetch('/api/photos');
-                const photos = await response.json();
+                const response = await fetchWithAuth('/api/photos');
+                if (!response.ok) throw new Error('Fout bij ophalen foto\'s');
                 
+                photos = await response.json();
                 const grid = document.getElementById('photosGrid');
-                grid.innerHTML = photos.map(photo => `
-                    <div class="photo-card">
-                        <img src="${photo.path}" alt="${photo.title || 'Geen titel'}">
-                        <div class="photo-info">
-                            <h3>${photo.title || 'Geen titel'}</h3>
-                            <p>${photo.category || 'Geen categorie'}</p>
-                            <button onclick="editPhoto('${photo._id}')" class="btn btn-secondary">Bewerken</button>
-                            <button onclick="deletePhoto('${photo._id}')" class="btn btn-danger">Verwijderen</button>
-                        </div>
-                    </div>
-                `).join('');
+                
+                grid.innerHTML = '';
+                photos.forEach(photo => {
+                    grid.appendChild(createPhotoElement(photo));
+                });
+
+                // Pas de opgeslagen thumbnail grootte toe
+                const savedSize = localStorage.getItem('thumbnailSize');
+                if (savedSize) {
+                    grid.style.setProperty('--thumbnail-size', `${savedSize}px`);
+                }
             } catch (error) {
                 console.error('Error loading photos:', error);
-                showError('Fout bij het laden van foto\'s');
+                showMessage('Fout bij het laden van foto\'s', 'error');
+                throw error;
             }
+        }
+
+        // Update createPhotoElement functie
+        function createPhotoElement(photo) {
+            const div = document.createElement('div');
+            div.className = 'photo-card';
+            div.dataset.id = photo._id;
+            
+            div.innerHTML = `
+                <div class="selection-overlay">
+                    <div class="checkbox"></div>
+                </div>
+                <img src="${photo.path}" alt="${photo.title || 'Geen titel'}">
+                <div class="photo-info">
+                    <h3>${photo.title || 'Geen titel'}</h3>
+                    <p>${photo.album ? photo.album.title : 'Geen album'}</p>
+                    <div class="photo-actions">
+                        <button class="btn btn-icon edit-btn" title="Bewerken">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-icon btn-danger delete-btn" title="Verwijderen">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Event listeners
+            div.addEventListener('click', (e) => {
+                if (isSelectMode || isAlbumSelectMode) {
+                    togglePhotoSelection(photo._id, e);
+                }
+            });
+
+            const deleteBtn = div.querySelector('.delete-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', (e) => {
+                    if (!isSelectMode && !isAlbumSelectMode) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        deletePhoto(photo._id);
+                    }
+                });
+            }
+
+            const editBtn = div.querySelector('.edit-btn');
+            if (editBtn) {
+                editBtn.addEventListener('click', (e) => {
+                    if (!isSelectMode && !isAlbumSelectMode) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        editPhoto(photo._id);
+                    }
+                });
+            }
+
+            return div;
+        }
+
+        // Thumbnail grootte aanpassen
+        function initializeThumbnailSizeControl() {
+            const slider = document.getElementById('thumbnailSize');
+            const sizeDisplay = document.getElementById('thumbnailSizeValue');
+            const photosGrid = document.getElementById('photosGrid');
+            
+            // Laad opgeslagen waarde uit localStorage
+            const savedSize = localStorage.getItem('thumbnailSize');
+            if (savedSize) {
+                slider.value = savedSize;
+                updateThumbnailSize(savedSize);
+            }
+
+            slider.addEventListener('input', (e) => {
+                const size = e.target.value;
+                updateThumbnailSize(size);
+            });
+
+            slider.addEventListener('change', (e) => {
+                // Sla de waarde op in localStorage bij het loslaten van de slider
+                localStorage.setItem('thumbnailSize', e.target.value);
+            });
+
+            function updateThumbnailSize(size) {
+                sizeDisplay.textContent = `${size}px`;
+                photosGrid.style.setProperty('--thumbnail-size', `${size}px`);
+            }
+        }
+
+        // Check auth status bij laden
+        async function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/verify', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Auth check failed');
+                }
+            } catch (error) {
+                console.error('Auth check error:', error);
+                localStorage.removeItem('token');
+                window.location.href = '/login.html';
+            }
+        }
+
+        // Logout functie
+        async function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/login.html';
         }
 
         // Upload functionaliteit
@@ -374,188 +580,279 @@
         }
 
         async function handleFileUpload(files) {
-            const uploadedFiles = Array.from(files);
-            
-            for (let file of uploadedFiles) {
-                if (!file.type.startsWith('image/')) {
-                    showError(`${file.name} is geen afbeelding`);
-                    continue;
+            const formData = new FormData();
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    formData.append('photos', file);
+                } else {
+                    showMessage(`${file.name} is geen afbeelding`, 'error');
                 }
+            });
 
-                const formData = new FormData();
-                formData.append('photo', file);
+            try {
+                const response = await fetchWithAuth('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error('Upload mislukt');
+
+                showMessage('Foto\'s succesvol geüpload');
+                await loadPhotos(); // Herlaad de foto's
+            } catch (error) {
+                console.error('Upload error:', error);
+                showMessage('Fout bij uploaden van foto\'s', 'error');
+            }
+        }
+
+        // Album functies
+        async function createAlbum() {
+            showConfirmDialog(async (confirmed, value) => {
+                if (!confirmed || !value) return;
                 
                 try {
-                    const response = await fetch('/api/upload', {
+                    const response = await fetchWithAuth('/api/albums', {
                         method: 'POST',
-                        credentials: 'include',
-                        body: formData
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ title: value })
                     });
+
+                    if (!response.ok) throw new Error('Fout bij maken van album');
                     
-                    if (!response.ok) throw new Error('Upload mislukt');
-                    
-                    showSuccess('Foto succesvol geüpload');
-                    loadPhotos();
+                    await loadAlbums();
+                    showMessage('Album succesvol aangemaakt');
                 } catch (error) {
-                    console.error('Upload error:', error);
-                    showError(`Fout bij uploaden van ${file.name}`);
+                    console.error('Error creating album:', error);
+                    showMessage('Fout bij maken van album', 'error');
                 }
-            }
+            }, {
+                message: 'Geef een naam voor het nieuwe album:',
+                inputField: true,
+                confirmText: 'Aanmaken',
+                cancelText: 'Annuleren'
+            });
         }
 
-        // Foto bewerken/verwijderen
-        async function editPhoto(photoId) {
-            // Implementeer foto bewerken functionaliteit
-        }
+        function createAlbumElement(album) {
+            const div = document.createElement('div');
+            div.className = 'album-card';
+            div.dataset.id = album._id;
+            
+            // Maak een gestapelde preview van maximaal 3 foto's uit het album
+            const photoStack = album.photos && album.photos.length > 0 
+                ? album.photos.slice(0, 3).map((photo, index) => `
+                    <div class="stacked-photo" style="
+                        background-image: url('${photo.path}');
+                        transform: rotate(${(index - 1) * 5}deg) translateY(${index * -5}px);
+                        z-index: ${3 - index};
+                    "></div>
+                `).join('')
+                : '<div class="empty-album"><i class="fas fa-images"></i></div>';
 
-        async function deletePhoto(photoId) {
-            if (!confirm('Weet je zeker dat je deze foto wilt verwijderen?')) return;
-
-            try {
-                const response = await fetch(`/api/photos/${photoId}`, {
-                    method: 'DELETE',
-                    credentials: 'include'
-                });
-
-                if (!response.ok) throw new Error('Verwijderen mislukt');
-
-                showSuccess('Foto succesvol verwijderd');
-                loadPhotos();
-            } catch (error) {
-                console.error('Delete error:', error);
-                showError('Fout bij het verwijderen van de foto');
-            }
-        }
-
-        // Gebruikersbeheer
-        async function loadUsers() {
-            try {
-                const response = await fetch('/api/users', {
-                    credentials: 'include'
-                });
-                
-                if (!response.ok) throw new Error('Fout bij ophalen gebruikers');
-                
-                const users = await response.json();
-                const usersList = document.getElementById('usersList');
-                
-                usersList.innerHTML = users.map(user => `
-                    <div class="user-item">
-                        <span>${user.username}</span>
-                        <div class="user-actions">
-                            ${user.username !== 'admin' ? `
-                                <button onclick="resetPassword('${user._id}')" class="btn btn-secondary">
-                                    Reset wachtwoord
-                                </button>
-                                <button onclick="deleteUser('${user._id}')" class="btn btn-danger">
-                                    Verwijderen
-                                </button>
-                            ` : ''}
-                        </div>
+            div.innerHTML = `
+                <div class="album-preview">
+                    ${photoStack}
+                </div>
+                <div class="album-info">
+                    <h3>${album.title}</h3>
+                    <p>${album.photos ? album.photos.length : 0} foto's</p>
+                    <div class="album-actions">
+                        <button class="btn btn-icon add-photos-btn" title="Foto's toevoegen">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <button class="btn btn-icon edit-album-btn" title="Album bewerken">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-icon btn-danger delete-album-btn" title="Album verwijderen">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </div>
-                `).join('');
-            } catch (error) {
-                console.error('Error loading users:', error);
-                showError('Fout bij het laden van gebruikers');
+                </div>
+            `;
+
+            // Event listeners
+            const addBtn = div.querySelector('.add-photos-btn');
+            if (addBtn) {
+                addBtn.addEventListener('click', () => {
+                    enterAlbumSelectMode(album._id);
+                });
             }
+
+            const editBtn = div.querySelector('.edit-album-btn');
+            if (editBtn) {
+                editBtn.addEventListener('click', () => {
+                    editAlbum(album._id);
+                });
+            }
+
+            const deleteBtn = div.querySelector('.delete-album-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', () => {
+                    deleteAlbum(album._id);
+                });
+            }
+
+            return div;
         }
 
-        async function addUser(event) {
-            event.preventDefault();
-            const username = document.getElementById('newUsername').value;
-            const password = document.getElementById('newPassword').value;
+        let currentAlbumId = null;
+        let isAlbumSelectMode = false;
+
+        function enterAlbumSelectMode(albumId) {
+            isAlbumSelectMode = true;
+            currentAlbumId = albumId;
+            selectedPhotos.clear();
+            
+            // UI aanpassingen
+            document.querySelectorAll('.photo-card').forEach(card => {
+                card.classList.add('selectable');
+            });
+            
+            // Toon speciale acties voor album selectie
+            const bulkActions = document.getElementById('bulkActions');
+            bulkActions.innerHTML = `
+                <button class="btn btn-icon" onclick="addSelectedToAlbum()" title="Toevoegen aan album">
+                    <i class="fas fa-plus"></i>
+                    <span id="selectedCount">0</span>
+                </button>
+                <button class="btn btn-icon" onclick="cancelAlbumSelect()" title="Annuleren">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            bulkActions.style.display = 'flex';
+        }
+
+        function cancelAlbumSelect() {
+            isAlbumSelectMode = false;
+            currentAlbumId = null;
+            selectedPhotos.clear();
+            updateSelectedCount();
+            
+            // Reset UI
+            document.querySelectorAll('.photo-card').forEach(card => {
+                card.classList.remove('selectable', 'selected');
+            });
+            
+            // Reset bulk actions
+            const bulkActions = document.getElementById('bulkActions');
+            bulkActions.style.display = 'none';
+        }
+
+        async function addSelectedToAlbum() {
+            if (!currentAlbumId || selectedPhotos.size === 0) return;
 
             try {
-                const response = await fetch('/api/users', {
+                const response = await fetchWithAuth(`/api/albums/${currentAlbumId}/photos`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    credentials: 'include',
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({
+                        photoIds: Array.from(selectedPhotos)
+                    })
                 });
 
-                if (!response.ok) {
-                    const data = await response.json();
-                    throw new Error(data.error || 'Fout bij toevoegen gebruiker');
-                }
+                if (!response.ok) throw new Error('Fout bij toevoegen van foto\'s aan album');
 
-                showSuccess('Gebruiker succesvol toegevoegd');
-                document.getElementById('addUserForm').reset();
-                loadUsers();
+                showMessage(`${selectedPhotos.size} foto's toegevoegd aan album`);
+                cancelAlbumSelect();
+                await loadAlbums();
             } catch (error) {
-                console.error('Error adding user:', error);
-                showError(error.message);
+                console.error('Error adding photos to album:', error);
+                showMessage('Fout bij toevoegen van foto\'s aan album', 'error');
             }
         }
 
-        async function deleteUser(userId) {
-            if (!confirm('Weet je zeker dat je deze gebruiker wilt verwijderen?')) return;
+        async function editAlbum(albumId) {
+            const album = albums.find(a => a._id === albumId);
+            if (!album) return;
 
+            showConfirmDialog(async (confirmed, value) => {
+                if (!confirmed || !value || value === album.title) return;
+
+                try {
+                    const response = await fetchWithAuth(`/api/albums/${albumId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ title: value })
+                    });
+
+                    if (!response.ok) throw new Error('Fout bij bewerken van album');
+
+                    await loadAlbums();
+                    showMessage('Album succesvol bijgewerkt');
+                } catch (error) {
+                    console.error('Error editing album:', error);
+                    showMessage('Fout bij bewerken van album', 'error');
+                }
+            }, {
+                message: 'Geef een nieuwe naam voor het album:',
+                inputField: true,
+                inputValue: album.title,
+                confirmText: 'Opslaan',
+                cancelText: 'Annuleren'
+            });
+        }
+
+        async function deleteAlbum(albumId) {
+            showConfirmDialog(async (confirmed) => {
+                if (!confirmed) return;
+
+                try {
+                    const response = await fetchWithAuth(`/api/albums/${albumId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (!response.ok) throw new Error('Fout bij verwijderen van album');
+
+                    await loadAlbums();
+                    showMessage('Album succesvol verwijderd');
+                } catch (error) {
+                    console.error('Error deleting album:', error);
+                    showMessage('Fout bij verwijderen van album', 'error');
+                }
+            }, {
+                message: 'Weet je zeker dat je dit album wilt verwijderen?',
+                confirmText: 'Verwijderen',
+                cancelText: 'Annuleren',
+                isDangerous: true
+            });
+        }
+
+        async function loadAlbums() {
             try {
-                const response = await fetch(`/api/users/${userId}`, {
-                    method: 'DELETE',
-                    credentials: 'include'
+                const response = await fetchWithAuth('/api/albums');
+                if (!response.ok) throw new Error('Fout bij ophalen albums');
+                
+                albums = await response.json();
+                const grid = document.getElementById('albumsGrid');
+                
+                grid.innerHTML = '';
+                albums.forEach(album => {
+                    grid.appendChild(createAlbumElement(album));
                 });
-
-                if (!response.ok) {
-                    const data = await response.json();
-                    throw new Error(data.error || 'Fout bij verwijderen gebruiker');
-                }
-
-                showSuccess('Gebruiker succesvol verwijderd');
-                loadUsers();
             } catch (error) {
-                console.error('Error deleting user:', error);
-                showError(error.message);
+                console.error('Error loading albums:', error);
+                showMessage('Fout bij het laden van albums', 'error');
             }
         }
 
-        async function resetPassword(userId) {
+        // Initialize alle functionaliteit
+        document.addEventListener('DOMContentLoaded', async () => {
             try {
-                const response = await fetch(`/api/users/${userId}/reset-password`, {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-
-                if (!response.ok) {
-                    const data = await response.json();
-                    throw new Error(data.error || 'Fout bij resetten wachtwoord');
-                }
-
-                const data = await response.json();
-                alert(`Tijdelijk wachtwoord: ${data.temporaryPassword}\n\nGeef dit direct aan de gebruiker!`);
+                await checkAuth();
+                await loadPhotos();
+                await loadAlbums();
+                initializeUpload();
+                initializeThumbnailSizeControl();
             } catch (error) {
-                console.error('Error resetting password:', error);
-                showError(error.message);
+                console.error('Initialization error:', error);
+                showMessage('Er is een fout opgetreden bij het laden van de pagina', 'error');
             }
-        }
-
-        // Logout functie
-        async function logout() {
-            try {
-                const response = await fetch('/api/auth/logout', {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-
-                if (response.ok) {
-                    window.location.href = '/login.html';
-                } else {
-                    showError('Fout bij uitloggen');
-                }
-            } catch (error) {
-                console.error('Logout error:', error);
-                showError('Fout bij uitloggen');
-            }
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            loadPhotos();
-            initializeUpload();
-            loadUsers();
-            document.getElementById('addUserForm').addEventListener('submit', addUser);
         });
     </script>
 </body>

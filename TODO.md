@@ -1,10 +1,12 @@
 # TODO Lijst Wouter Koppen Portfolio
 
 ## Hoge Prioriteit
-- [ ] Sessie persistentie fixen
-  - Controleer sessie configuratie
-  - Pas cookie instellingen aan
-  - Verifieer MongoDB store connectie
+- [ ] Authenticatie verbeteren
+  - Overstappen van sessies naar JWT
+  - JWT refresh tokens implementeren
+  - Token expiratie en vernieuwing
+  - Secure cookie storage voor tokens
+  - Logout functionaliteit verbeteren
 
 ## Functionaliteit
 - [ ] Album management implementeren
@@ -32,16 +34,20 @@
 - [ ] Rate limiting toevoegen
 - [ ] Input validatie verbeteren
 - [ ] Security headers toevoegen
+- [ ] CSRF bescherming implementeren
+- [ ] XSS bescherming verbeteren
 
 ## Testen
 - [ ] Unit tests schrijven
 - [ ] End-to-end tests toevoegen
 - [ ] Performance tests uitvoeren
+- [ ] Security tests toevoegen
 
 ## Deployment
 - [ ] CI/CD pipeline opzetten
 - [ ] Backup strategie implementeren
 - [ ] Monitoring toevoegen
+- [ ] SSL/TLS configuratie optimaliseren
 
 ## Nice to have
 - [ ] Thema's implementeren (light/dark mode)
