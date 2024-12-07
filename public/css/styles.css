@@ -295,7 +295,6 @@ body {
 
 .album-card.drop-target {
     border: 2px dashed #007bff !important;
-    background-color: rgba(0, 123, 255, 0.1) !important;
     transform: scale(1.02);
     box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
 }
@@ -924,7 +923,6 @@ nav {
 
 .drop-target {
     border: 2px dashed var(--accent-color) !important;
-    background-color: var(--hover-bg) !important;
     transform: scale(1.02);
     transition: all 0.2s ease;
 }
@@ -990,7 +988,6 @@ nav {
 
 .album-card.drop-target {
     border: 2px dashed #007bff !important;
-    background-color: rgba(0, 123, 255, 0.1) !important;
     transform: scale(1.02);
     box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
 }

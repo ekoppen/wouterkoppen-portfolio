@@ -478,17 +478,17 @@ section {
 /* Basis posities voor de preview foto's */
 .albums-container .preview-photo:nth-child(1) {
     z-index: 8;
-    transform: translate(-10px, -10px) rotate(-8deg);
+    transform: translate(-10px, -20px) ;
 }
 
 .albums-container .preview-photo:nth-child(2) {
     z-index: 7;
-    transform: translate(5px, 5px) rotate(4deg);
+    transform: translate(15px, 15px) rotate(14deg);
 }
 
 .albums-container .preview-photo:nth-child(3) {
     z-index: 6;
-    transform: translate(-5px, 15px) rotate(-4deg);
+    transform: translate(-25px, 25px) rotate(-24deg);
 }
 
 .albums-container .preview-photo:nth-child(4) {
@@ -516,38 +516,7 @@ section {
     transform: translate(20px, 15px) rotate(12deg);
 }
 
-/* Hover effecten voor de preview foto's */
-.albums-container .album-card:hover .preview-photo:nth-child(1) {
-    transform: translate(-40px, -40px) rotate(-12deg);
-}
 
-.albums-container .album-card:hover .preview-photo:nth-child(2) {
-    transform: translate(40px, -20px) rotate(12deg);
-}
-
-.albums-container .album-card:hover .preview-photo:nth-child(3) {
-    transform: translate(-20px, 40px) rotate(-8deg);
-}
-
-.albums-container .album-card:hover .preview-photo:nth-child(4) {
-    transform: translate(45px, 30px) rotate(16deg);
-}
-
-.albums-container .album-card:hover .preview-photo:nth-child(5) {
-    transform: translate(-45px, 10px) rotate(-16deg);
-}
-
-.albums-container .album-card:hover .preview-photo:nth-child(6) {
-    transform: translate(30px, -40px) rotate(8deg);
-}
-
-.albums-container .album-card:hover .preview-photo:nth-child(7) {
-    transform: translate(-35px, -25px) rotate(-10deg);
-}
-
-.albums-container .album-card:hover .preview-photo:nth-child(8) {
-    transform: translate(25px, 35px) rotate(14deg);
-}
 
 .no-photos {
     color: var(--text-secondary);
@@ -593,7 +562,6 @@ section {
 
 .drop-target {
     border: 2px dashed var(--color-primary);
-    background-color: rgba(0, 123, 255, 0.05);
 }
 
 /* Overlay en dialog stijlen */
@@ -943,32 +911,12 @@ section {
     display: block;
 }
 
-/* De eerste foto krijgt geen transformatie */
-.album-card:hover .preview-photo:first-child {
-    transform: none;
-}
-
-/* Vanaf de tweede foto beginnen de transformaties */
-.album-card:hover .preview-photo:nth-child(2) {
-    transform: scale(1.05);
-}
-
-.album-card:hover .preview-photo:nth-child(3) {
-    transform: scale(1.1);
-}
-
-.album-card:hover .preview-photo:nth-child(4) {
-    transform: scale(1.15);
-}
-
-.album-card:hover .preview-photo:nth-child(n+5) {
-    transform: scale(1.2);
-}
 
 /* Drag & Drop stijlen */
 .album-card.drop-target {
-    background-color: var(--color-primary);
-    opacity: 0.8;
+    border: 2px dashed var(--color-primary);
+    transform: scale(1.02);
+    box-shadow: var(--shadow-hover);
 }
 
 .album-card.drop-target * {
@@ -977,11 +925,6 @@ section {
 
 .photo-card.dragging {
     opacity: 0.5;
-}
-
-#albums-section.drag-hover {
-    background-color: var(--color-primary);
-    opacity: 0.8;
 }
 
 /* Album card stijlen */

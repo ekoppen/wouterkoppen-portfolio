@@ -330,7 +330,7 @@ async function handlePhotoDropOnAlbum(photoId, albumId) {
             throw new Error('Fout bij toevoegen van foto aan album');
         }
 
-        await Promise.all([loadAlbums(), loadPhotos()]);
+        await loadAlbums();
         showMessage('Foto succesvol toegevoegd aan album');
     } catch (error) {
         console.error('Error adding photo to album:', error);
@@ -420,7 +420,9 @@ function renderAlbums() {
         
         // Voeg foto previews toe
         if (album.photos && album.photos.length > 0) {
-            album.photos.slice(0, 8).forEach(photo => {
+            // Neem de laatste 4 foto's en draai ze om zodat de nieuwste bovenop komt
+            const previewPhotos = album.photos.slice(-4).reverse();
+            previewPhotos.forEach(photo => {
                 const previewContainer = document.createElement('div');
                 previewContainer.className = 'preview-photo';
                 
@@ -730,25 +732,19 @@ export function handleDragOver(e) {
             e.clientX <= rect.right
         );
 
-        if (isOverSection) {
-            albumsSection.classList.add('drag-hover');
-            
-            // Als de sectie ingeklapt is, klap hem uit na een korte vertraging
-            if (albumsSection.classList.contains('collapsed') && !window.expandTimeout) {
-                window.expandTimeout = setTimeout(() => {
-                    toggleSection('albums-section');
-                }, 500);
-            }
-        } else {
-            albumsSection.classList.remove('drag-hover');
-            if (window.expandTimeout) {
-                clearTimeout(window.expandTimeout);
-                window.expandTimeout = null;
-            }
+        if (isOverSection && albumsSection.classList.contains('collapsed') && !window.expandTimeout) {
+            window.expandTimeout = setTimeout(() => {
+                toggleSection('albums-section');
+            }, 500);
         }
     }
 
-    // Highlight het specifieke album als we erover hoveren
+    // Verwijder eerst alle drop-target klassen
+    document.querySelectorAll('.drop-target').forEach(el => {
+        el.classList.remove('drop-target');
+    });
+
+    // Voeg alleen drop-target toe aan het album waar we overheen hoveren
     const albumCard = e.target.closest('.album-card');
     if (albumCard) {
         albumCard.classList.add('drop-target');
@@ -756,21 +752,17 @@ export function handleDragOver(e) {
 }
 
 export function handleDragLeave(e) {
-    const albumsSection = document.getElementById('albums-section');
     const albumCard = e.target.closest('.album-card');
     const relatedTarget = e.relatedTarget?.closest('.album-card');
     
-    // Controleer of we echt de albums sectie verlaten
-    if (albumsSection && !albumsSection.contains(e.relatedTarget)) {
-        albumsSection.classList.remove('drag-hover');
-        if (window.expandTimeout) {
-            clearTimeout(window.expandTimeout);
-            window.expandTimeout = null;
-        }
-    }
-    
+    // Verwijder drop-target alleen als we echt het album verlaten
     if (albumCard && albumCard !== relatedTarget) {
         albumCard.classList.remove('drop-target');
+    }
+
+    if (window.expandTimeout) {
+        clearTimeout(window.expandTimeout);
+        window.expandTimeout = null;
     }
 }
 
