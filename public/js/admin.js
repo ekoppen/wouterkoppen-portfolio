@@ -426,8 +426,17 @@ function renderAlbums() {
             handlePhotoDropOnAlbum(e, album._id);
         });
 
-        const previewHTML = album.photos && album.photos.length > 0
-            ? [...album.photos].reverse().slice(0, 8).map((photo, index) => {
+        // Neem alleen unieke foto's voor de preview
+        const uniquePhotos = album.photos && album.photos.length > 0 
+            ? [...new Set(album.photos.map(photo => photo._id))]
+                .map(id => album.photos.find(photo => photo._id === id))
+                .filter(Boolean)
+                .reverse()
+                .slice(0, 8)
+            : [];
+
+        const previewHTML = uniquePhotos.length > 0
+            ? uniquePhotos.map((photo, index) => {
                 return `
                     <div class="preview-photo">
                         <img src="/uploads/${photo.filename}" alt="${album.title}">

@@ -118,8 +118,9 @@ router.put('/:albumId/photos/:photoId', auth, async (req, res) => {
             return res.status(404).json({ error: 'Album niet gevonden' });
         }
 
-        // Voeg de foto toe als deze nog niet in het album zit
-        if (!album.photos.includes(photoId)) {
+        // Check of de foto al in het album zit door de strings te vergelijken
+        const photoExists = album.photos.some(id => id.toString() === photoId);
+        if (!photoExists) {
             album.photos.push(photoId);
             await album.save();
         }
