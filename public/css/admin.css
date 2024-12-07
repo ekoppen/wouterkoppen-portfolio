@@ -1,488 +1,628 @@
-/* Admin Panel Styling */
+/* Algemene stijlen */
+:root {
+    --primary-color: #007bff;
+    --danger-color: #dc3545;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --gray-color: #6c757d;
+    --light-gray: #f8f9fa;
+    --dark-gray: #343a40;
+    --thumbnail-size: 200px;
+    --content-max-width: 900px;
+}
+
 body {
-    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
     margin: 0;
     padding: 0;
-    overflow-y: auto;
+    background-color: #f4f4f4;
 }
 
-nav {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 2rem;
-    background: var(--background-color, #1a1a1a);
-    z-index: 1000;
+/* Header stijlen */
+header {
+    background-color: white;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.nav-right {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+header h1 {
+    margin: 0;
+    color: var(--dark-gray);
 }
 
-.nav-right a {
-    color: var(--text-color, #fff);
-    text-decoration: none;
-    opacity: 0.8;
-    transition: opacity 0.2s ease;
+/* Main container stijlen */
+main {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 0 1rem;
 }
 
-.nav-right a:hover {
-    opacity: 1;
-}
-
-main.admin-panel {
-    padding: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-    min-height: calc(100vh - 80px);
-}
-
-.section {
-    margin-bottom: 3rem;
-    padding: 2rem;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-}
-
-.section h2 {
-    margin-top: 0;
-    margin-bottom: 1.5rem;
-}
-
-.upload-zone {
-    border: 2px dashed #666;
-    border-radius: 8px;
-    padding: 2rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin-bottom: 2rem;
-}
-
-.upload-zone:hover,
-.upload-zone.dragover {
-    border-color: #2563eb;
-    background: rgba(37, 99, 235, 0.1);
-}
-
-:root {
-    --thumbnail-size: 200px;
-}
-
-.action-group {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.thumbnail-size-control {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--text-color, #fff);
-}
-
-.thumbnail-size-control i {
-    font-size: 1.2rem;
-    opacity: 0.8;
-}
-
-.thumbnail-size-control input[type="range"] {
-    width: 100px;
-}
-
-.thumbnail-size-control span {
-    min-width: 50px;
-    font-size: 0.8rem;
-}
-
+/* Foto grid stijlen */
 .photos-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(var(--thumbnail-size), 1fr));
+    grid-template-columns: repeat(auto-fit, var(--thumbnail-size));
     gap: 1rem;
-}
-
-.photo-card {
-    position: relative;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
+    padding: 1rem 0;
+    justify-content: center;
+    max-width: 100%;
+    margin: 0 auto;
     overflow: hidden;
 }
 
-.photo-card img {
+@media (max-width: calc(1000px - 2rem)) { /* main max-width - padding */
+    .photos-grid {
+        grid-template-columns: repeat(2, minmax(0, var(--thumbnail-size)));
+    }
+}
+
+/* Sectie stijlen */
+section {
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.section-header {
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    border-bottom: 1px solid var(--light-gray);
+}
+
+.section-header h2 {
+    margin: 0;
+    color: var(--dark-gray);
+    font-size: 1.25rem;
+}
+
+.section-content {
+    padding: 1.5rem;
+    transition: all 0.3s ease-out;
+    overflow: hidden;
+}
+
+.btn-collapse {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    color: var(--gray-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-collapse:hover {
+    color: var(--dark-gray);
+}
+
+.btn-collapse i {
+    transition: transform 0.3s ease;
+}
+
+.section-collapsible.collapsed .section-content {
+    display: none;
+}
+
+.section-collapsible.collapsed .btn-collapse i {
+    transform: rotate(180deg);
+}
+
+/* Button stijlen */
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+.btn-secondary {
+    background-color: var(--gray-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.btn-edit, .btn-delete {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    color: white;
+    transition: color 0.2s;
+    font-size: 0.9rem;
+}
+
+.btn-edit:hover {
+    color: var(--primary-color);
+}
+
+.btn-delete:hover {
+    color: var(--danger-color);
+}
+
+/* Toolbar stijlen */
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.thumbnail-control {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+/* Foto grid stijlen */
+.photos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, var(--thumbnail-size));
+    gap: 1rem;
+    padding: 1rem 0;
+    justify-content: center;
+}
+
+.photo-card {
+    width: var(--thumbnail-size);
+    height: var(--thumbnail-size);
+    position: relative;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: move;
+    background: var(--light-gray);
+    transition: box-shadow 0.3s;
+}
+
+.photo-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.photo-container {
     width: 100%;
-    aspect-ratio: 1;
+    height: 100%;
+    position: relative;
+}
+
+.photo-container img {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
 }
 
-.photo-info {
-    padding: 1rem;
-    background: rgba(255, 255, 255, 0.05);
+.photo-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    opacity: 0;
+    transition: opacity 0.3s;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    justify-content: space-between;
+    padding: 1rem;
 }
 
-.photo-info h3 {
-    margin: 0;
-    font-size: 1rem;
-    color: var(--text-color, #fff);
-}
-
-.photo-info p {
+.photo-overlay h3 {
     margin: 0;
     font-size: 0.9rem;
-    color: var(--text-color, #fff);
-    opacity: 0.7;
+    font-weight: normal;
+}
+
+.photo-card:hover .photo-overlay {
+    opacity: 1;
 }
 
 .photo-actions {
     display: flex;
+    justify-content: flex-end;
     gap: 0.5rem;
-    margin-top: 0.5rem;
 }
 
-.btn {
+/* Album stijlen */
+.albums-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+    padding: 1rem 0;
+}
+
+.album-card {
+    background: var(--light-gray);
+    border-radius: 4px;
+    height: 280px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.album-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Album header stijlen */
+.album-card .album-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
     padding: 0.5rem 1rem;
+    background: white;
+    border-bottom: 1px solid var(--light-gray);
+    position: relative;
+    z-index: 20;
+}
+
+.album-card .album-header .album-info {
+    flex: 1;
+    min-width: 0;
+    padding-right: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    height: 2.5rem;
+    align-items: flex-start;
+    padding-top: 10px;
+}
+
+.album-card .album-header .album-info h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--dark-gray);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+    width: 100%;
+}
+
+.album-card .album-header .album-info .photo-count {
+    font-size: 0.75rem;
+    color: var(--gray-color);
+    line-height: 1;
+    text-align: left;
+    width: 100%;
+}
+
+.album-card .album-header .album-actions {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+    position: relative;
+    z-index: 21;
+    padding-top: 10px;
+    margin-left: auto;
+}
+
+.album-card .album-header .album-actions button {
+    position: relative;
+    z-index: 22;
+    pointer-events: auto;
+    padding: 0.35rem;
+    color: var(--gray-color);
+    transition: color 0.2s ease;
+    background: none;
     border: none;
-    border-radius: 4px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.album-card .album-header .album-actions button:hover {
+    color: var(--dark-gray);
+}
+
+.album-card .album-header .album-actions .btn-delete:hover {
+    color: var(--danger-color);
+}
+
+.album-preview {
+    flex: 1;
+    background: var(--light-gray);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.preview-photo {
+    position: absolute;
+    width: 130px;
+    height: 130px;
+    background: white;
+    padding: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transform-origin: center center;
+    transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
+.preview-photo:hover {
+    z-index: 2;
+}
+
+.preview-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Basis posities voor 8 foto's */
+.preview-photo:nth-child(1) {
+    z-index: 8;
+    transform: translate(0, 0) rotate(0deg);
+}
+
+.preview-photo:nth-child(2) {
+    z-index: 7;
+    transform: translate(-20px, 10px) rotate(-8deg);
+}
+
+.preview-photo:nth-child(3) {
+    z-index: 6;
+    transform: translate(15px, -20px) rotate(8deg);
+}
+
+.preview-photo:nth-child(4) {
+    z-index: 5;
+    transform: translate(-25px, -15px) rotate(-12deg);
+}
+
+.preview-photo:nth-child(5) {
+    z-index: 4;
+    transform: translate(25px, 15px) rotate(12deg);
+}
+
+.preview-photo:nth-child(6) {
+    z-index: 3;
+    transform: translate(-15px, 20px) rotate(-6deg);
+}
+
+.preview-photo:nth-child(7) {
+    z-index: 2;
+    transform: translate(20px, -10px) rotate(10deg);
+}
+
+.preview-photo:nth-child(8) {
+    z-index: 1;
+    transform: translate(-10px, -15px) rotate(-10deg);
+}
+
+/* Hover effecten voor 8 foto's */
+.album-card:hover .preview-photo:nth-child(1) {
+    transform: translate(0, -10px) rotate(0deg);
+}
+
+.album-card:hover .preview-photo:nth-child(2) {
+    transform: translate(-30px, 15px) rotate(-12deg);
+}
+
+.album-card:hover .preview-photo:nth-child(3) {
+    transform: translate(25px, -30px) rotate(12deg);
+}
+
+.album-card:hover .preview-photo:nth-child(4) {
+    transform: translate(-35px, -20px) rotate(-16deg);
+}
+
+.album-card:hover .preview-photo:nth-child(5) {
+    transform: translate(35px, 20px) rotate(16deg);
+}
+
+.album-card:hover .preview-photo:nth-child(6) {
+    transform: translate(-20px, 30px) rotate(-10deg);
+}
+
+.album-card:hover .preview-photo:nth-child(7) {
+    transform: translate(30px, -15px) rotate(14deg);
+}
+
+.album-card:hover .preview-photo:nth-child(8) {
+    transform: translate(-15px, -25px) rotate(-14deg);
+}
+
+.empty-album {
+    color: var(--gray-color);
     font-size: 0.9rem;
-    transition: background-color 0.3s ease;
-}
-
-.btn-primary {
-    background: #2563eb;
-    color: white;
-}
-
-.btn-primary:hover {
-    background: #1d4ed8;
-}
-
-.btn-danger {
-    background: #dc2626;
-    color: white;
-}
-
-.btn-danger:hover {
-    background: #b91c1c;
-}
-
-.btn-secondary {
-    background: #4b5563;
-    color: white;
-}
-
-.btn-secondary:hover {
-    background: #374151;
-}
-
-.toast {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    padding: 1rem 2rem;
-    border-radius: 4px;
-    color: white;
-    opacity: 0;
-    transform: translateY(100%);
-    transition: all 0.3s ease;
-    z-index: 9999;
-}
-
-.toast.show {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.toast.error {
-    background: #dc2626;
-}
-
-.toast.success {
-    background: #059669;
-}
-
-.confirm-dialog {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: var(--background-color, #1a1a1a);
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 10000;
-    max-width: 90%;
-    width: 400px;
-    display: none;
-}
-
-.confirm-dialog.show {
-    display: block;
-    animation: fadeIn 0.2s ease;
-}
-
-.confirm-dialog-content {
     text-align: center;
 }
 
-.dialog-input {
-    width: 100%;
-    padding: 0.5rem;
-    margin: 1rem 0;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    color: var(--text-color, #fff);
-    font-size: 1rem;
+/* Drag and drop stijlen */
+.dragging {
+    opacity: 0.5;
+    cursor: move;
 }
 
-.dialog-input:focus {
-    outline: none;
-    border-color: #2563eb;
+.drop-target {
+    border: 2px dashed var(--primary-color);
+    background-color: rgba(0, 123, 255, 0.05);
 }
 
-.confirm-dialog-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    margin-top: 1.5rem;
-}
-
+/* Overlay en dialog stijlen */
 .overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 9999;
+    background: rgba(0,0,0,0.5);
     display: none;
+    justify-content: center;
+    align-items: center;
 }
 
 .overlay.show {
-    display: block;
-    animation: fadeIn 0.2s ease;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-.photos-actions {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
 }
 
-.bulk-actions {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-}
-
-.bulk-actions #selectedCount {
-    margin-left: 0.25rem;
-    font-size: 0.8rem;
-}
-
-.photo-card {
-    position: relative;
-    cursor: pointer;
-}
-
-.selection-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 2;
-}
-
-.photo-card.selectable .selection-overlay {
-    display: flex;
-    background: rgba(0, 0, 0, 0);
-    transition: background-color 0.2s ease;
-}
-
-.photo-card.selectable:hover .selection-overlay {
-    background: rgba(0, 0, 0, 0.3);
-}
-
-.photo-card.selected .selection-overlay {
-    background: rgba(0, 0, 0, 0.5);
-}
-
-.checkbox {
-    width: 24px;
-    height: 24px;
-    border: 2px solid white;
-    border-radius: 4px;
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background: transparent;
-    transition: all 0.2s ease;
-}
-
-.photo-card.selected .checkbox {
-    background: #2563eb;
-    border-color: #2563eb;
-}
-
-.photo-card.selected .checkbox:after {
-    content: '';
-    position: absolute;
-    left: 8px;
-    top: 4px;
-    width: 5px;
-    height: 10px;
-    border: solid white;
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
-}
-
-.photo-card.selectable .photo-actions {
-    display: none;
-}
-
-.btn-icon {
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    color: var(--text-color, #fff);
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.btn-icon:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-.btn-icon.btn-danger {
-    background: rgba(220, 38, 38, 0.1);
-    color: #ef4444;
-}
-
-.btn-icon.btn-danger:hover {
-    background: rgba(220, 38, 38, 0.2);
-}
-
-.btn-icon i {
-    font-size: 1rem;
-}
-
-.albums-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-top: 1rem;
-}
-
-.album-card {
-    background: rgba(255, 255, 255, 0.05);
+.confirm-dialog {
+    background: white;
+    padding: 2rem;
     border-radius: 8px;
+    max-width: 400px;
+    width: 90%;
+    display: none;
+}
+
+.confirm-dialog.show {
+    display: block;
+}
+
+.confirm-dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.confirm-dialog-input {
+    width: 100%;
+    padding: 0.5rem;
+    margin-top: 1rem;
+    border: 1px solid var(--gray-color);
+    border-radius: 4px;
+}
+
+/* Toast notificatie stijlen */
+.toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    padding: 1rem 2rem;
+    background: white;
+    color: var(--dark-gray);
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(100%);
+    opacity: 0;
+    transition: transform 0.3s, opacity 0.3s;
+    z-index: 1000;
+}
+
+.toast.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.toast.success {
+    border-left: 4px solid var(--success-color);
+    background: #f0fff4;
+}
+
+.toast.error {
+    border-left: 4px solid var(--danger-color);
+    background: #fff5f5;
+}
+
+.toast.warning {
+    border-left: 4px solid var(--warning-color);
+    background: #fffbeb;
+}
+
+/* Pagina grid stijlen */
+#pagesContainer {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+    padding: 1rem 0;
+}
+
+.page-card {
+    background: var(--light-gray);
+    border-radius: 4px;
     overflow: hidden;
-    transition: transform 0.3s ease;
-}
-
-.album-card:hover {
-    transform: translateY(-5px);
-}
-
-.album-preview {
-    position: relative;
-    height: 200px;
-    background: rgba(0, 0, 0, 0.2);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.stacked-photo {
-    position: absolute;
-    width: 180px;
-    height: 180px;
-    background-size: cover;
-    background-position: center;
-    border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
-}
-
-.album-card:hover .stacked-photo {
-    transform: rotate(0deg) translateY(0) !important;
-}
-
-.empty-album {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 180px;
-    height: 180px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 4px;
-}
-
-.empty-album i {
-    font-size: 3rem;
-    opacity: 0.5;
-}
-
-.album-info {
+    transition: box-shadow 0.3s;
     padding: 1rem;
 }
 
-.album-info h3 {
+.page-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.page-header h3 {
     margin: 0;
     font-size: 1.1rem;
-    color: var(--text-color, #fff);
+    color: var(--dark-gray);
 }
 
-.album-info p {
-    margin: 0.5rem 0;
-    font-size: 0.9rem;
-    color: var(--text-color, #fff);
-    opacity: 0.7;
-}
-
-.album-actions {
+.page-actions {
     display: flex;
     gap: 0.5rem;
-    margin-top: 0.5rem;
 }
 
-.albums-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 1rem;
+#albums-section.section-collapsible {
+    transition: all 0.3s ease;
+}
+
+#albums-section.drag-hover {
+    background: var(--light-gray);
+    border: 2px dashed var(--primary-color);
+}
+
+#albums-section.drag-hover .section-header {
+    background: var(--light-gray);
+}
+
+/* Sectie transitie stijlen */
+.section-content {
+    transition: all 0.3s ease-out;
+    overflow: hidden;
+    max-height: 2000px;
+    opacity: 1;
+}
+
+.section-collapsible.collapsed .section-content {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 0;
+}
+
+.section-collapsible .btn-collapse i {
+    transition: transform 0.3s ease;
+}
+
+.section-collapsible.collapsed .btn-collapse i {
+    transform: rotate(180deg);
 }
  

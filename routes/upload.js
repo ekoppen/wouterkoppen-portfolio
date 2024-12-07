@@ -76,7 +76,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Upload route
-router.post('/', auth, upload.array('photos', 10), async (req, res) => {
+router.post('/upload', auth, upload.array('photos', 10), async (req, res) => {
     try {
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({ error: 'Geen bestanden geüpload' });

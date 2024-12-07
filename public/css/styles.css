@@ -800,39 +800,29 @@ nav {
     position: relative;
     cursor: grab;
     user-select: none;
+    -webkit-user-drag: element;
 }
 
-.photo-card img {
-    pointer-events: none;
-    width: 100%;
-    height: calc(100% - 50px);
-    object-fit: cover;
+.photo-card:active {
+    cursor: grabbing;
 }
 
 .photo-card.dragging {
     opacity: 0.5;
     transform: scale(0.95);
-    cursor: grabbing;
+    z-index: 1000;
 }
 
-.drag-ghost {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    background-color: white;
-}
-
-.album-card.drag-over,
-.page-card.drag-over {
+.album-card.drop-target,
+.page-card.drop-target {
     border: 2px dashed #4CAF50;
     background: rgba(76, 175, 80, 0.1);
+    transform: scale(1.02);
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
 }
 
-.album-card.drag-over .album-preview,
-.page-card.drag-over .page-preview {
-    background: rgba(76, 175, 80, 0.1);
-}
-
-/* Album preview */
-.album-preview {
+.album-preview,
+.page-preview {
     position: relative;
     width: 100%;
     height: calc(100% - 50px);
@@ -868,6 +858,15 @@ nav {
 .stacked-photo:nth-child(3) {
     transform: translate(-50%, -50%) rotate(5deg);
     z-index: 1;
+}
+
+.empty-album {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--text-muted);
+    font-size: 1.2em;
 }
 
 /* Prevent text selection during drag */

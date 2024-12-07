@@ -8,10 +8,16 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 WORKDIR /app
 
+# Kopieer package files
 COPY package*.json ./
 
+# Installeer dependencies
 RUN npm install
 
+# Installeer nodemon globaal
+RUN npm install -g nodemon
+
+# Kopieer de rest van de applicatie
 COPY . .
 
 # Maak uploads directory en zet de juiste permissies
@@ -29,4 +35,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
     CMD wget --spider -q http://localhost:3000/health || exit 1
 
-CMD ["npm", "start"] 
+# Start met nodemon in development mode
+CMD ["nodemon", "--legacy-watch", "server.js"] 

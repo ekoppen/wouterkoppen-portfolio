@@ -79,7 +79,7 @@ router.delete('/:id', auth, async (req, res) => {
             return res.status(404).json({ error: 'Pagina niet gevonden' });
         }
 
-        await page.remove();
+        await Page.deleteOne({ _id: req.params.id });
         res.json({ message: 'Pagina succesvol verwijderd' });
     } catch (error) {
         console.error('Error deleting page:', error);
