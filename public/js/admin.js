@@ -403,7 +403,10 @@ function renderAlbums() {
         const albumHeader = document.createElement('div');
         albumHeader.className = 'album-header';
         albumHeader.innerHTML = `
-            <h3>${album.title}</h3>
+            <div class="album-title">
+                <h3>${album.title}</h3>
+                <p class="photo-count">${album.photos ? album.photos.length : 0} foto's</p>
+            </div>
             <div class="album-actions">
                 <button class="btn-icon" onclick="handleEditAlbum('${album._id}', '${album.title}')" title="Album bewerken">
                     <i class="fas fa-edit"></i>
@@ -420,8 +423,8 @@ function renderAlbums() {
         
         // Voeg foto previews toe
         if (album.photos && album.photos.length > 0) {
-            // Neem de laatste 4 foto's en draai ze om zodat de nieuwste bovenop komt
-            const previewPhotos = album.photos.slice(-4).reverse();
+            // Neem de laatste 8 foto's en draai ze om zodat de nieuwste bovenop komt
+            const previewPhotos = album.photos.slice(-8).reverse();
             previewPhotos.forEach(photo => {
                 const previewContainer = document.createElement('div');
                 previewContainer.className = 'preview-photo';
