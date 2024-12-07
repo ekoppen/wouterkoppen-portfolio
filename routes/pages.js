@@ -8,18 +8,11 @@ const Album = require('../models/Album');
 router.get('/', auth, async (req, res) => {
     try {
         const pages = await Page.find()
-            .populate({
-                path: 'albums',
-                populate: {
-                    path: 'photos',
-                    options: { limit: 1 } // Alleen eerste foto voor preview
-                }
-            })
-            .sort('order');
+            .populate('theme')
+            .sort({ createdAt: -1 });
         res.json(pages);
     } catch (error) {
-        console.error('Error fetching pages:', error);
-        res.status(500).json({ error: 'Fout bij ophalen van pagina\'s' });
+        res.status(500).json({ error: 'Fout bij ophalen pagina\'s' });
     }
 });
 
@@ -51,7 +44,7 @@ router.post('/', auth, async (req, res) => {
 // Pagina bijwerken
 router.put('/:id', auth, async (req, res) => {
     try {
-        const { title, albums, order } = req.body;
+        const { title, content, albums, order } = req.body;
         const page = await Page.findById(req.params.id);
         
         if (!page) {
@@ -59,6 +52,7 @@ router.put('/:id', auth, async (req, res) => {
         }
 
         if (title) page.title = title;
+        if (content !== undefined) page.content = content;
         if (albums) page.albums = albums;
         if (typeof order === 'number') page.order = order;
 
@@ -156,6 +150,26 @@ router.put('/:id/albums/reorder', auth, async (req, res) => {
     } catch (error) {
         console.error('Error reordering albums:', error);
         res.status(500).json({ error: 'Fout bij herordenen van albums' });
+    }
+});
+
+// Pagina thema bijwerken
+router.put('/:id/theme', auth, async (req, res) => {
+    try {
+        const { themeId } = req.body;
+        const page = await Page.findByIdAndUpdate(
+            req.params.id,
+            { theme: themeId },
+            { new: true }
+        ).populate('theme');
+
+        if (!page) {
+            return res.status(404).json({ error: 'Pagina niet gevonden' });
+        }
+
+        res.json(page);
+    } catch (error) {
+        res.status(400).json({ error: 'Fout bij bijwerken pagina thema' });
     }
 });
 

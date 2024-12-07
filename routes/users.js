@@ -1,104 +1,192 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const jwt = require('jsonwebtoken');
 
-// Alle gebruikers ophalen
-router.get('/', auth, async (req, res) => {
+// Middleware om te controleren of gebruiker admin is
+const isAdmin = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (user.role !== 'admin') {
+            return res.status(403).json({ error: 'Geen toegang. Admin rechten vereist.' });
+        }
+        next();
+    } catch (error) {
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+// Alle gebruikers ophalen (alleen admin)
+router.get('/', auth, isAdmin, async (req, res) => {
     try {
         const users = await User.find().select('-password');
         res.json(users);
     } catch (error) {
-        console.error('Error fetching users:', error);
         res.status(500).json({ error: 'Fout bij ophalen gebruikers' });
     }
 });
 
-// Nieuwe gebruiker aanmaken
-router.post('/', auth, async (req, res) => {
+// Inloggen
+router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
-
-        // Check of gebruiker al bestaat
-        const existingUser = await User.findOne({ username });
-        if (existingUser) {
-            return res.status(400).json({ error: 'Gebruikersnaam bestaat al' });
+        
+        // Zoek gebruiker
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(401).json({ error: 'Ongeldige inloggegevens' });
         }
 
-        // Hash wachtwoord
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
+        // Controleer wachtwoord
+        const isValid = await user.verifyPassword(password);
+        if (!isValid) {
+            return res.status(401).json({ error: 'Ongeldige inloggegevens' });
+        }
 
-        // Maak nieuwe gebruiker
-        const user = new User({
-            username,
-            password: hashedPassword
-        });
+        // Controleer of account actief is
+        if (!user.isActive) {
+            return res.status(401).json({ error: 'Account is gedeactiveerd' });
+        }
 
+        // Update laatste login
+        user.lastLogin = Date.now();
         await user.save();
 
-        res.status(201).json({
-            message: 'Gebruiker succesvol aangemaakt',
-            user: {
-                id: user._id,
-                username: user.username
-            }
-        });
+        // Genereer JWT token
+        const token = jwt.sign(
+            { id: user._id, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+
+        res.json({ token, user: user.toJSON() });
     } catch (error) {
-        console.error('Error creating user:', error);
-        res.status(500).json({ error: 'Fout bij aanmaken gebruiker' });
+        res.status(500).json({ error: 'Fout bij inloggen' });
     }
 });
 
-// Gebruiker verwijderen
-router.delete('/:id', auth, async (req, res) => {
+// Nieuwe gebruiker aanmaken (alleen admin)
+router.post('/', auth, isAdmin, async (req, res) => {
     try {
-        const user = await User.findById(req.params.id);
+        const user = new User(req.body);
+        await user.save();
+        res.status(201).json(user.toJSON());
+    } catch (error) {
+        if (error.code === 11000) {
+            return res.status(400).json({ error: 'Gebruikersnaam of email bestaat al' });
+        }
+        res.status(400).json({ error: 'Fout bij aanmaken gebruiker' });
+    }
+});
+
+// Gebruiker bijwerken (alleen admin)
+router.put('/:id', auth, isAdmin, async (req, res) => {
+    try {
+        const updates = req.body;
         
+        // Verwijder velden die niet bijgewerkt mogen worden
+        delete updates.role; // Role changes via aparte endpoint
+        
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            updates,
+            { new: true }
+        ).select('-password');
+
         if (!user) {
             return res.status(404).json({ error: 'Gebruiker niet gevonden' });
         }
 
-        // Voorkom verwijderen van admin gebruiker
-        if (user.username === 'admin') {
-            return res.status(403).json({ error: 'Admin gebruiker kan niet worden verwijderd' });
+        res.json(user);
+    } catch (error) {
+        res.status(400).json({ error: 'Fout bij bijwerken gebruiker' });
+    }
+});
+
+// Gebruikersrol wijzigen (alleen admin)
+router.put('/:id/role', auth, isAdmin, async (req, res) => {
+    try {
+        const { role } = req.body;
+        if (!['admin', 'editor', 'viewer'].includes(role)) {
+            return res.status(400).json({ error: 'Ongeldige rol' });
         }
 
-        await user.remove();
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            { role },
+            { new: true }
+        ).select('-password');
+
+        if (!user) {
+            return res.status(404).json({ error: 'Gebruiker niet gevonden' });
+        }
+
+        res.json(user);
+    } catch (error) {
+        res.status(400).json({ error: 'Fout bij wijzigen rol' });
+    }
+});
+
+// Gebruiker activeren/deactiveren (alleen admin)
+router.put('/:id/toggle-active', auth, isAdmin, async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ error: 'Gebruiker niet gevonden' });
+        }
+
+        user.isActive = !user.isActive;
+        await user.save();
+
+        res.json(user.toJSON());
+    } catch (error) {
+        res.status(400).json({ error: 'Fout bij activeren/deactiveren gebruiker' });
+    }
+});
+
+// Wachtwoord wijzigen (gebruiker zelf of admin)
+router.put('/:id/password', auth, async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const user = await User.findById(req.params.id);
+
+        if (!user) {
+            return res.status(404).json({ error: 'Gebruiker niet gevonden' });
+        }
+
+        // Alleen admin mag wachtwoord van andere gebruikers wijzigen
+        if (req.user.id !== user._id.toString() && req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Geen toegang' });
+        }
+
+        // Als het niet de admin is, verifieer het huidige wachtwoord
+        if (req.user.role !== 'admin') {
+            const isValid = await user.verifyPassword(currentPassword);
+            if (!isValid) {
+                return res.status(401).json({ error: 'Huidig wachtwoord is onjuist' });
+            }
+        }
+
+        user.password = newPassword;
+        await user.save();
+
+        res.json({ message: 'Wachtwoord succesvol gewijzigd' });
+    } catch (error) {
+        res.status(400).json({ error: 'Fout bij wijzigen wachtwoord' });
+    }
+});
+
+// Gebruiker verwijderen (alleen admin)
+router.delete('/:id', auth, isAdmin, async (req, res) => {
+    try {
+        const user = await User.findByIdAndDelete(req.params.id);
+        if (!user) {
+            return res.status(404).json({ error: 'Gebruiker niet gevonden' });
+        }
         res.json({ message: 'Gebruiker succesvol verwijderd' });
     } catch (error) {
-        console.error('Error deleting user:', error);
         res.status(500).json({ error: 'Fout bij verwijderen gebruiker' });
-    }
-});
-
-// Wachtwoord resetten
-router.post('/:id/reset-password', auth, async (req, res) => {
-    try {
-        const user = await User.findById(req.params.id);
-        
-        if (!user) {
-            return res.status(404).json({ error: 'Gebruiker niet gevonden' });
-        }
-
-        // Genereer tijdelijk wachtwoord
-        const tempPassword = Math.random().toString(36).slice(-8);
-        
-        // Hash nieuw wachtwoord
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(tempPassword, salt);
-        
-        user.password = hashedPassword;
-        await user.save();
-
-        res.json({ 
-            message: 'Wachtwoord succesvol gereset',
-            temporaryPassword: tempPassword
-        });
-    } catch (error) {
-        console.error('Error resetting password:', error);
-        res.status(500).json({ error: 'Fout bij resetten wachtwoord' });
     }
 });
 

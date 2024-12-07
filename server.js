@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const User = require('./models/User');
+const Theme = require('./models/Theme');
 require('dotenv').config();
 
 const app = express();
@@ -14,6 +15,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 }).then(() => {
     console.log('MongoDB verbinding succesvol');
     createAdminUser(); // Maak admin gebruiker aan als deze nog niet bestaat
+    createDefaultTheme(); // Maak standaard thema aan als er nog geen actief thema is
 }).catch(err => {
     console.error('MongoDB verbinding mislukt:', err);
 });
@@ -31,11 +33,13 @@ const authRoutes = require('./routes/auth');
 const uploadRoutes = require('./routes/upload');
 const albumRoutes = require('./routes/albums');
 const pageRoutes = require('./routes/pages');
+const themeRoutes = require('./routes/themes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/photos', uploadRoutes);
 app.use('/api/albums', albumRoutes);
 app.use('/api/pages', pageRoutes);
+app.use('/api/themes', themeRoutes);
 
 // Admin gebruiker aanmaken als deze nog niet bestaat
 async function createAdminUser() {
@@ -55,6 +59,43 @@ async function createAdminUser() {
         }
     } catch (error) {
         console.error('Fout bij aanmaken admin gebruiker:', error);
+    }
+}
+
+// Standaard thema aanmaken als er nog geen actief thema is
+async function createDefaultTheme() {
+    try {
+        const activeTheme = await Theme.findOne({ isActive: true });
+        if (!activeTheme) {
+            const defaultTheme = new Theme({
+                name: 'Standaard Thema',
+                isActive: true,
+                colors: {
+                    primary: '#007bff',
+                    secondary: '#6c757d',
+                    success: '#28a745',
+                    danger: '#dc3545',
+                    warning: '#ffc107',
+                    info: '#17a2b8',
+                    white: '#ffffff',
+                    gray100: '#f8f9fa',
+                    gray200: '#e9ecef',
+                    gray300: '#dee2e6',
+                    gray400: '#ced4da',
+                    gray500: '#adb5bd',
+                    gray600: '#6c757d',
+                    gray700: '#495057',
+                    gray800: '#343a40',
+                    gray900: '#212529',
+                    black: '#000000'
+                }
+            });
+            
+            await defaultTheme.save();
+            console.log('Standaard thema aangemaakt');
+        }
+    } catch (error) {
+        console.error('Fout bij aanmaken standaard thema:', error);
     }
 }
 

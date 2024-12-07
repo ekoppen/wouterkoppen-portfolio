@@ -24,51 +24,64 @@
     <main>
         <section id="pages-section" class="section-collapsible">
             <div class="section-header">
-                <h2>Pagina's</h2>
-                <button class="btn-collapse" data-section="pages-section">
-                    <i class="fas fa-chevron-up"></i>
-                </button>
+                <h2>Pagina's <span class="item-count">0</span></h2>
+                <div class="section-actions">
+                    <button class="btn-primary" data-action="createPage" title="Nieuwe Pagina">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button class="btn-collapse" data-section="pages-section">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
             </div>
             <div class="section-content">
-                <button class="btn-primary" data-action="createPage">Nieuwe Pagina</button>
                 <div id="pagesContainer"></div>
             </div>
         </section>
 
-        <section id="albums-section" class="section-collapsible" 
-            ondragover="event.preventDefault(); handleDragOver(event);" 
-            ondragleave="handleDragLeave(event)">
+        <section id="albums-section" class="section-collapsible">
             <div class="section-header">
-                <h2>Albums</h2>
-                <button class="btn-collapse" data-section="albums-section">
-                    <i class="fas fa-chevron-up"></i>
-                </button>
+                <h2>Albums <span class="item-count">0</span></h2>
+                <div class="section-actions">
+                    <button class="btn-primary" data-action="createAlbum" title="Nieuw Album">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button class="btn-collapse" data-section="albums-section">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
             </div>
             <div class="section-content">
-                <button class="btn-primary" data-action="createAlbum">Nieuw Album</button>
                 <div id="albumsContainer" class="albums-container"></div>
             </div>
         </section>
 
         <section id="photos-section" class="section-collapsible">
             <div class="section-header">
-                <h2>Foto's</h2>
-                <button class="btn-collapse" data-section="photos-section">
-                    <i class="fas fa-chevron-up"></i>
-                </button>
+                <h2>Foto's <span class="item-count">0</span></h2>
+                <div class="section-actions">
+                    <button class="btn-primary" data-action="openUploadDialog" title="Upload Foto's">
+                        <i class="fas fa-upload"></i>
+                    </button>
+                    <button class="btn-secondary" data-action="toggleSelectMode" title="Selecteer Meerdere">
+                        <i class="fas fa-check-square"></i>
+                    </button>
+                    <button class="btn-danger" data-action="deleteSelectedPhotos" style="display: none;" title="Verwijder Geselecteerde">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button class="btn-secondary" data-action="deselectAll" style="display: none;" title="Deselecteer Alles">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="thumbnail-control">
+                        <i class="fas fa-image" title="Thumbnail grootte"></i>
+                        <input type="range" id="thumbnailSize" min="100" max="400" step="50" value="200" title="Pas thumbnail grootte aan">
+                    </div>
+                    <button class="btn-collapse" data-section="photos-section">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
             </div>
             <div class="section-content">
-                <div class="toolbar">
-                    <button class="btn-primary" data-action="openUploadDialog">Upload Foto's</button>
-                    <button class="btn-secondary" data-action="toggleSelectMode">Selecteer Meerdere</button>
-                    <button class="btn-danger" data-action="deleteSelectedPhotos" style="display: none;">Verwijder Geselecteerde</button>
-                    <button class="btn-secondary" data-action="deselectAll" style="display: none;">Deselecteer Alles</button>
-                    <div class="thumbnail-control">
-                        <label for="thumbnailSize">Thumbnail grootte:</label>
-                        <input type="range" id="thumbnailSize" min="100" max="400" step="50" value="200">
-                        <span id="thumbnailSizeValue">200px</span>
-                    </div>
-                </div>
                 <div id="photosGrid" class="photos-grid"></div>
             </div>
         </section>
@@ -99,67 +112,67 @@
             handleDeleteAlbum,
             handleEditPhoto,
             handleDeletePhoto,
-            handleFileUpload,
-            handlePhotoDropOnAlbum,
-            handleDragStart,
-            handleDragEnd,
-            handleDragOver,
-            handleDragLeave,
-            toggleSection
+            handleCreateTheme,
+            handleEditTheme,
+            handleActivateTheme,
+            handleDeleteTheme,
+            handleEditColor,
+            showColorPickerDialog,
+            closeColorPickerDialog,
+            updateColorPreview,
+            saveColorChange
         } from './js/admin.js';
 
-        // Maak de functies globaal beschikbaar voor drag & drop
-        window.handleDragStart = handleDragStart;
-        window.handleDragEnd = handleDragEnd;
-        window.handleDragOver = handleDragOver;
-        window.handleDragLeave = handleDragLeave;
-
-        // Event listeners toevoegen
+        // Initialize the application
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialiseer de admin interface
             initialize();
 
-            // Herstel sectie statussen
-            ['pages-section', 'albums-section', 'photos-section'].forEach(sectionId => {
-                const section = document.getElementById(sectionId);
-                if (section) {
-                    const isCollapsed = localStorage.getItem(`${sectionId}-collapsed`) === 'true';
-                    if (isCollapsed) {
-                        section.classList.add('collapsed');
-                    }
+            // Add event listeners
+            document.querySelectorAll('[data-action]').forEach(element => {
+                const action = element.getAttribute('data-action');
+                switch (action) {
+                    case 'createPage':
+                        element.addEventListener('click', createPage);
+                        break;
+                    case 'createAlbum':
+                        element.addEventListener('click', createAlbum);
+                        break;
+                    case 'createTheme':
+                        element.addEventListener('click', handleCreateTheme);
+                        break;
+                    case 'openUploadDialog':
+                        element.addEventListener('click', openUploadDialog);
+                        break;
+                    case 'toggleSelectMode':
+                        element.addEventListener('click', toggleSelectMode);
+                        break;
+                    case 'deleteSelectedPhotos':
+                        element.addEventListener('click', deleteSelectedPhotos);
+                        break;
+                    case 'deselectAll':
+                        element.addEventListener('click', deselectAll);
+                        break;
+                    case 'addAlbum':
+                        element.addEventListener('click', addAlbum);
+                        break;
                 }
             });
-
-            // Event listeners voor uitklap knoppen
-            document.querySelectorAll('.btn-collapse').forEach(button => {
-                button.addEventListener('click', () => {
-                    const sectionId = button.dataset.section;
-                    toggleSection(sectionId);
-                });
-            });
-
-            // Event listeners voor actie knoppen
-            document.querySelectorAll('[data-action]').forEach(button => {
-                button.addEventListener('click', () => {
-                    const action = button.dataset.action;
-                    switch (action) {
-                        case 'createPage': createPage(); break;
-                        case 'createAlbum': createAlbum(); break;
-                        case 'openUploadDialog': openUploadDialog(); break;
-                        case 'toggleSelectMode': toggleSelectMode(); break;
-                        case 'deleteSelectedPhotos': deleteSelectedPhotos(); break;
-                        case 'deselectAll': deselectAll(); break;
-                    }
-                });
-            });
-
-            // Event listeners voor drag & drop op albums sectie
-            const albumsSection = document.getElementById('albums-section');
-            if (albumsSection) {
-                albumsSection.addEventListener('dragover', handleDragOver);
-                albumsSection.addEventListener('dragleave', handleDragLeave);
-            }
         });
+
+        // Make functions available globally for inline event handlers
+        window.handleEditPage = handleEditPage;
+        window.handleDeletePage = handleDeletePage;
+        window.handleEditAlbum = handleEditAlbum;
+        window.handleDeleteAlbum = handleDeleteAlbum;
+        window.handleEditPhoto = handleEditPhoto;
+        window.handleDeletePhoto = handleDeletePhoto;
+        window.handleActivateTheme = handleActivateTheme;
+        window.handleDeleteTheme = handleDeleteTheme;
+        window.handleEditColor = handleEditColor;
+        window.showColorPickerDialog = showColorPickerDialog;
+        window.closeColorPickerDialog = closeColorPickerDialog;
+        window.updateColorPreview = updateColorPreview;
+        window.saveColorChange = saveColorChange;
 
         // Logout functionaliteit
         document.getElementById('logoutButton').addEventListener('click', () => {

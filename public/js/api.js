@@ -40,6 +40,15 @@ export async function editPage(pageId, title) {
     return response.json();
 }
 
+export async function updatePageTheme(pageId, themeId) {
+    const response = await fetchWithAuth(`/api/pages/${pageId}/theme`, {
+        method: 'PUT',
+        body: JSON.stringify({ themeId })
+    });
+    if (!response.ok) throw new Error('Fout bij bijwerken pagina thema');
+    return response.json();
+}
+
 // API endpoints voor albums
 export async function loadAlbums() {
     const response = await fetchWithAuth('/api/albums');
@@ -85,5 +94,123 @@ export async function editPhoto(photoId, title) {
         body: JSON.stringify({ title })
     });
     if (!response.ok) throw new Error('Fout bij bewerken van foto');
+    return response.json();
+}
+
+// User management functies
+export async function getUsers() {
+    const response = await fetchWithAuth('/api/users');
+    if (!response.ok) throw new Error('Fout bij ophalen gebruikers');
+    return response.json();
+}
+
+export async function createUser(userData) {
+    const response = await fetchWithAuth('/api/users', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(userData)
+    });
+    if (!response.ok) throw new Error('Fout bij aanmaken gebruiker');
+    return response.json();
+}
+
+export async function updateUser(userId, updates) {
+    const response = await fetchWithAuth(`/api/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updates)
+    });
+    if (!response.ok) throw new Error('Fout bij bijwerken gebruiker');
+    return response.json();
+}
+
+export async function updateUserRole(userId, role) {
+    const response = await fetchWithAuth(`/api/users/${userId}/role`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ role })
+    });
+    if (!response.ok) throw new Error('Fout bij wijzigen rol');
+    return response.json();
+}
+
+export async function toggleUserActive(userId) {
+    const response = await fetchWithAuth(`/api/users/${userId}/toggle-active`, {
+        method: 'PUT'
+    });
+    if (!response.ok) throw new Error('Fout bij activeren/deactiveren gebruiker');
+    return response.json();
+}
+
+export async function changePassword(userId, currentPassword, newPassword) {
+    const response = await fetchWithAuth(`/api/users/${userId}/password`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ currentPassword, newPassword })
+    });
+    if (!response.ok) throw new Error('Fout bij wijzigen wachtwoord');
+    return response.json();
+}
+
+export async function deleteUser(userId) {
+    const response = await fetchWithAuth(`/api/users/${userId}`, {
+        method: 'DELETE'
+    });
+    if (!response.ok) throw new Error('Fout bij verwijderen gebruiker');
+    return response.json();
+}
+
+// Theme management functies
+export async function getThemes() {
+    const response = await fetchWithAuth('/api/themes');
+    if (!response.ok) throw new Error('Fout bij ophalen thema\'s');
+    return response.json();
+}
+
+export async function getActiveTheme() {
+    const response = await fetchWithAuth('/api/themes/active');
+    if (!response.ok) throw new Error('Fout bij ophalen actief thema');
+    return response.json();
+}
+
+export async function createTheme(themeData) {
+    const response = await fetchWithAuth('/api/themes', {
+        method: 'POST',
+        body: JSON.stringify(themeData)
+    });
+    if (!response.ok) throw new Error('Fout bij aanmaken thema');
+    return response.json();
+}
+
+export async function updateTheme(themeId, updates) {
+    const response = await fetchWithAuth(`/api/themes/${themeId}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates)
+    });
+    if (!response.ok) throw new Error('Fout bij bijwerken thema');
+    return response.json();
+}
+
+export async function activateTheme(themeId) {
+    const response = await fetchWithAuth(`/api/themes/${themeId}/activate`, {
+        method: 'POST'
+    });
+    if (!response.ok) throw new Error('Fout bij activeren thema');
+    return response.json();
+}
+
+export async function deleteTheme(themeId) {
+    const response = await fetchWithAuth(`/api/themes/${themeId}`, {
+        method: 'DELETE'
+    });
+    if (!response.ok) throw new Error('Fout bij verwijderen thema');
     return response.json();
 } 

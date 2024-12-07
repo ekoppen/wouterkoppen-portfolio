@@ -3,16 +3,15 @@ const mongoose = require('mongoose');
 const pageSchema = new mongoose.Schema({
     title: {
         type: String,
-        required: true,
-        trim: true
+        required: true
     },
-    albums: [{
+    content: {
+        type: String,
+        default: ''
+    },
+    theme: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Album'
-    }],
-    order: {
-        type: Number,
-        default: 0
+        ref: 'Theme'
     },
     createdAt: {
         type: Date,
@@ -24,12 +23,9 @@ const pageSchema = new mongoose.Schema({
     }
 });
 
-// Update de updatedAt timestamp voor elke wijziging
 pageSchema.pre('save', function(next) {
     this.updatedAt = Date.now();
     next();
 });
 
-const Page = mongoose.model('Page', pageSchema);
-
-module.exports = Page; 
+module.exports = mongoose.model('Page', pageSchema); 

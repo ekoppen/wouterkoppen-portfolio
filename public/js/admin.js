@@ -1,12 +1,42 @@
-import { fetchWithAuth, loadPages as apiLoadPages, loadPhotos as apiLoadPhotos, loadAlbums as apiLoadAlbums, deletePhoto, editPhoto, deleteAlbum, editAlbum, deletePage, editPage } from './api.js';
-import { showMessage, showConfirmDialog } from './ui.js';
+import { 
+    fetchWithAuth, 
+    loadPages as apiLoadPages, 
+    loadPhotos as apiLoadPhotos, 
+    loadAlbums as apiLoadAlbums,
+    deletePhoto,
+    editPhoto,
+    deleteAlbum,
+    editAlbum,
+    deletePage,
+    editPage,
+    getThemes,
+    createTheme,
+    updateTheme,
+    activateTheme,
+    deleteTheme
+} from './api.js';
+
+import {
+    showMessage,
+    showConfirmDialog,
+    handleDragStart,
+    handleDragEnd,
+    handleDrop,
+    getLocalState,
+    setLocalState
+} from './ui.js';
+
+import { initializeTheme } from './theme.js';
 
 // State management
 let pages = [];
 let photos = [];
 let albums = [];
+let themes = [];
 let isSelectMode = false;
 let selectedPhotos = new Set();
+let currentEditingTheme = null;
+let currentEditingColor = null;
 
 // Auth check functie
 async function checkAuth() {
@@ -59,12 +89,15 @@ async function initialize() {
     try {
         await checkAuth();
         await Promise.all([
+            loadThemes(),
             loadPages(),
-            loadAlbums(),
-            loadPhotos()
+            loadPhotos(),
+            loadAlbums()
         ]);
         initializeDragAndDrop();
         initializeThumbnailSizeControl();
+        initializeCollapsibleSections();
+        await initializeTheme();
     } catch (error) {
         console.error('Initialization error:', error);
         window.location.href = '/login.html';
@@ -76,6 +109,7 @@ async function loadPages() {
     try {
         pages = await apiLoadPages();
         renderPages();
+        updateItemCounts();
     } catch (error) {
         console.error('Error loading pages:', error);
         showMessage('Fout bij laden van pagina\'s', 'error');
@@ -86,6 +120,7 @@ async function loadPhotos() {
     try {
         photos = await apiLoadPhotos();
         renderPhotos();
+        updateItemCounts();
     } catch (error) {
         console.error('Error loading photos:', error);
         showMessage('Fout bij laden van foto\'s', 'error');
@@ -97,9 +132,9 @@ async function loadAlbums() {
         albums = await apiLoadAlbums();
         const container = document.getElementById('albumsContainer');
         if (!container) return;
-
         container.innerHTML = '';
         renderAlbums();
+        updateItemCounts();
     } catch (error) {
         console.error('Error loading albums:', error);
     }
@@ -108,10 +143,9 @@ async function loadAlbums() {
 // Thumbnail size control
 function initializeThumbnailSizeControl() {
     const thumbnailSize = document.getElementById('thumbnailSize');
-    const thumbnailSizeValue = document.getElementById('thumbnailSizeValue');
     const photosGrid = document.getElementById('photosGrid');
 
-    if (thumbnailSize && thumbnailSizeValue) {
+    if (thumbnailSize) {
         // Configuratie
         const defaultSize = 200;
         thumbnailSize.min = 100;
@@ -125,7 +159,6 @@ function initializeThumbnailSizeControl() {
         // Update CSS variabele en tekst
         const updateThumbnailSize = (size) => {
             document.documentElement.style.setProperty('--thumbnail-size', `${size}px`);
-            thumbnailSizeValue.textContent = `${size}px`;
             localStorage.setItem('thumbnailSize', size);
             requestAnimationFrame(() => {
                 photosGrid.style.gridTemplateColumns = `repeat(auto-fill, ${size}px)`;
@@ -152,12 +185,10 @@ function initializeDragAndDrop() {
     });
 
     document.querySelectorAll('.album-card').forEach(card => {
-        const albumId = card.dataset.id;
         card.addEventListener('dragover', handleDragOver);
         card.addEventListener('dragleave', handleDragLeave);
         card.addEventListener('drop', (e) => {
-            e.preventDefault();
-            handlePhotoDropOnAlbum(e, albumId);
+            handleDrop(e, handlePhotoDropOnAlbum);
         });
     });
 }
@@ -196,22 +227,30 @@ async function handleFileUpload(files) {
 }
 
 // Event handlers voor foto en album acties
-async function handleEditPhoto(photoId, currentTitle) {
-    showConfirmDialog(async (confirmed, newTitle) => {
-        if (confirmed && newTitle) {
+async function handleEditPhoto(photoId, currentFilename) {
+    showConfirmDialog(async (confirmed, newFilename) => {
+        if (confirmed && newFilename) {
             try {
-                await editPhoto(photoId, newTitle);
+                await fetch(`/api/photos/${photoId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title: newFilename })
+                });
+
                 await loadPhotos();
-                showMessage('Foto succesvol bewerkt');
+                showMessage('Foto succesvol hernoemd');
             } catch (error) {
                 console.error('Error editing photo:', error);
-                showMessage('Fout bij bewerken van foto', 'error');
+                showMessage('Fout bij hernoemen van foto', 'error');
             }
         }
     }, {
-        message: 'Voer een nieuwe titel in:',
+        message: 'Voer een nieuwe naam in voor de foto:',
         inputField: true,
-        inputValue: currentTitle,
+        inputValue: currentFilename,
         confirmText: 'Opslaan',
         isDangerous: false
     });
@@ -221,7 +260,13 @@ async function handleDeletePhoto(photoId) {
     showConfirmDialog(async (confirmed) => {
         if (confirmed) {
             try {
-                await deletePhoto(photoId);
+                await fetch(`/api/photos/${photoId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
                 await loadPhotos();
                 showMessage('Foto succesvol verwijderd');
             } catch (error) {
@@ -274,64 +319,18 @@ async function handleDeleteAlbum(albumId) {
     });
 }
 
-async function handlePhotoDropOnAlbum(event, albumId) {
-    event.preventDefault();
-    console.log('Drop event op album:', albumId);
-    
-    // Probeer eerst JSON data te krijgen, val terug op text/plain
-    let photoId;
+// Foto naar album verplaatsen
+async function handlePhotoDropOnAlbum(photoId, albumId) {
     try {
-        const jsonData = event.dataTransfer.getData('application/json');
-        if (jsonData) {
-            const data = JSON.parse(jsonData);
-            photoId = data.photoId;
-        }
-    } catch (e) {
-        console.log('Geen JSON data gevonden, probeer text/plain');
-    }
-
-    // Val terug op text/plain als JSON niet werkt
-    if (!photoId) {
-        photoId = event.dataTransfer.getData('text/plain');
-    }
-
-    console.log('Opgehaalde photoId:', photoId);
-    
-    if (!photoId) {
-        console.error('Geen photoId gevonden in drag data');
-        return;
-    }
-
-    // Vind het album waar de foto naartoe wordt gesleept
-    const targetAlbum = albums.find(album => album._id === albumId);
-    if (!targetAlbum) {
-        console.error('Album niet gevonden:', albumId);
-        return;
-    }
-
-    // Check of de foto al in het album zit
-    if (targetAlbum.photos && targetAlbum.photos.some(photo => photo._id === photoId)) {
-        showMessage(`Deze foto zit al in het album "${targetAlbum.title || 'Geen titel'}"`, 'warning');
-        return;
-    }
-
-    try {
-        console.log('API aanroep met albumId:', albumId, 'photoId:', photoId);
-        const response = await fetch(`/api/albums/${albumId}/photos/${photoId}`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                'Content-Type': 'application/json'
-            }
+        const response = await fetchWithAuth(`/api/albums/${albumId}/photos/${photoId}`, {
+            method: 'PUT'
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('API response niet ok:', response.status, response.statusText, errorText);
             throw new Error('Fout bij toevoegen van foto aan album');
         }
 
-        await loadAlbums();
+        await Promise.all([loadAlbums(), loadPhotos()]);
         showMessage('Foto succesvol toegevoegd aan album');
     } catch (error) {
         console.error('Error adding photo to album:', error);
@@ -349,40 +348,18 @@ function renderPhotos() {
         const photoCard = document.createElement('div');
         photoCard.className = 'photo-card';
         photoCard.draggable = true;
+        photoCard.dataset.id = photo._id;
         
-        // Voeg de dragstart event listener direct toe aan de photoCard
-        photoCard.addEventListener('dragstart', (e) => {
-            console.log('Drag start - photoId:', photo._id);
-            // Stel meerdere data formaten in voor betere compatibiliteit
-            e.dataTransfer.setData('application/json', JSON.stringify({ photoId: photo._id }));
-            e.dataTransfer.setData('text/plain', photo._id);
-            e.target.classList.add('dragging');
-            
-            // Voeg drag-hover class toe aan albums sectie
-            const albumsSection = document.getElementById('albums-section');
-            if (albumsSection && albumsSection.classList.contains('collapsed')) {
-                albumsSection.classList.add('drag-hover');
-            }
-        });
-        
-        photoCard.addEventListener('dragend', (e) => {
-            e.target.classList.remove('dragging');
-            const albumsSection = document.getElementById('albums-section');
-            if (albumsSection) {
-                albumsSection.classList.remove('drag-hover');
-            }
-        });
-
         photoCard.innerHTML = `
             <div class="photo-container">
-                <img src="/uploads/${photo.filename}" alt="${photo.filename}" draggable="false">
+                <img src="${photo.path}" alt="${photo.title}" draggable="false">
                 <div class="photo-overlay">
-                    <h3>${photo.filename}</h3>
+                    <h3>${photo.title}</h3>
                     <div class="photo-actions">
-                        <button onclick="handleEditPhoto('${photo._id}')" class="btn-edit">
+                        <button class="btn-edit">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button onclick="handleDeletePhoto('${photo._id}')" class="btn-delete">
+                        <button class="btn-delete">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -390,92 +367,128 @@ function renderPhotos() {
             </div>
         `;
 
+        // Event listeners voor drag & drop
+        photoCard.addEventListener('dragstart', handleDragStart);
+        photoCard.addEventListener('dragend', handleDragEnd);
+
+        // Event listeners voor de knoppen
+        const editBtn = photoCard.querySelector('.btn-edit');
+        const deleteBtn = photoCard.querySelector('.btn-delete');
+
+        editBtn.addEventListener('click', () => handleEditPhoto(photo._id, photo.title));
+        deleteBtn.addEventListener('click', () => handleDeletePhoto(photo._id));
+
         photosGrid.appendChild(photoCard);
     });
 }
 
+// Albums renderen
 function renderAlbums() {
-    const albumsContainer = document.getElementById('albumsContainer');
-    if (!albumsContainer) return;
-    if (!albums || !Array.isArray(albums)) return;
+    const container = document.getElementById('albumsContainer');
+    if (!container) return;
 
-    albumsContainer.innerHTML = '';
-    
+    container.innerHTML = '';
     albums.forEach(album => {
         const albumCard = document.createElement('div');
         albumCard.className = 'album-card';
         albumCard.dataset.id = album._id;
 
-        // Drop event handlers
-        albumCard.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            albumCard.classList.add('drop-target');
-        });
+        // Laad opgeslagen staat
+        const isExpanded = getLocalState(`album_${album._id}_expanded`, false);
+        if (isExpanded) {
+            albumCard.classList.add('expanded');
+        }
 
-        albumCard.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            albumCard.classList.remove('drop-target');
-        });
-
-        albumCard.addEventListener('drop', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            albumCard.classList.remove('drop-target');
-            handlePhotoDropOnAlbum(e, album._id);
-        });
-
-        // Neem alleen unieke foto's voor de preview
-        const uniquePhotos = album.photos && album.photos.length > 0 
-            ? [...new Set(album.photos.map(photo => photo._id))]
-                .map(id => album.photos.find(photo => photo._id === id))
-                .filter(Boolean)
-                .reverse()
-                .slice(0, 8)
-            : [];
-
-        const previewHTML = uniquePhotos.length > 0
-            ? uniquePhotos.map((photo, index) => {
-                return `
-                    <div class="preview-photo">
-                        <img src="/uploads/${photo.filename}" alt="${album.title}">
-                    </div>
-                `;
-            }).join('')
-            : '<div class="empty-album">Geen foto\'s</div>';
-
-        albumCard.innerHTML = `
-            <div class="album-header">
-                <div class="album-info">
-                    <h3>${album.title || 'Geen titel'}</h3>
-                    ${album.photos && album.photos.length > 0 
-                        ? `<span class="photo-count">${album.photos.length} foto${album.photos.length !== 1 ? '\'s' : ''}</span>`
-                        : ''
-                    }
-                </div>
-                <div class="album-actions">
-                    <button class="btn-edit">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn-delete">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="album-preview">
-                ${previewHTML}
+        // Album header
+        const albumHeader = document.createElement('div');
+        albumHeader.className = 'album-header';
+        albumHeader.innerHTML = `
+            <h3>${album.title}</h3>
+            <div class="album-actions">
+                <button class="btn-icon" onclick="handleEditAlbum('${album._id}', '${album.title}')" title="Album bewerken">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-icon" onclick="handleDeleteAlbum('${album._id}')" title="Album verwijderen">
+                    <i class="fas fa-trash"></i>
+                </button>
             </div>
         `;
 
-        // Event listeners voor de knoppen
-        const editBtn = albumCard.querySelector('.btn-edit');
-        const deleteBtn = albumCard.querySelector('.btn-delete');
+        // Album preview
+        const albumPreview = document.createElement('div');
+        albumPreview.className = 'album-preview';
+        
+        // Voeg foto previews toe
+        if (album.photos && album.photos.length > 0) {
+            album.photos.slice(0, 8).forEach(photo => {
+                const previewContainer = document.createElement('div');
+                previewContainer.className = 'preview-photo';
+                
+                const img = document.createElement('img');
+                img.src = photo.thumbPath;
+                img.alt = photo.title || 'Preview';
+                
+                previewContainer.appendChild(img);
+                albumPreview.appendChild(previewContainer);
+            });
+        } else {
+            albumPreview.innerHTML = '<p class="no-photos">Geen foto\'s</p>';
+        }
 
-        editBtn.addEventListener('click', () => handleEditAlbum(album._id));
-        deleteBtn.addEventListener('click', () => handleDeleteAlbum(album._id));
+        // Album content
+        const albumContent = document.createElement('div');
+        albumContent.className = 'album-content';
+        
+        if (album.photos && album.photos.length > 0) {
+            const photosGrid = document.createElement('div');
+            photosGrid.className = 'photos-grid';
+            
+            album.photos.forEach(photo => {
+                const photoCard = document.createElement('div');
+                photoCard.className = 'photo-card';
+                photoCard.dataset.id = photo._id;
+                
+                photoCard.innerHTML = `
+                    <img src="${photo.thumbPath}" alt="${photo.title || ''}" loading="lazy">
+                    <div class="photo-actions">
+                        <button class="btn-icon" onclick="handleEditPhoto('${photo._id}', '${photo.title || ''}')" title="Foto bewerken">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon" onclick="handleDeletePhoto('${photo._id}')" title="Foto verwijderen">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                photosGrid.appendChild(photoCard);
+            });
+            
+            albumContent.appendChild(photosGrid);
+        } else {
+            albumContent.innerHTML = '<p class="no-photos">Geen foto\'s in dit album</p>';
+        }
 
-        albumsContainer.appendChild(albumCard);
+        // Voeg alles samen
+        albumCard.appendChild(albumHeader);
+        albumCard.appendChild(albumPreview);
+        albumCard.appendChild(albumContent);
+
+        // Voeg click handler toe voor expand/collapse
+        albumCard.addEventListener('click', (e) => {
+            // Voorkom dat clicks op knoppen het album uitklappen
+            if (!e.target.closest('.btn-icon')) {
+                handleAlbumClick(album._id);
+            }
+        });
+
+        // Voeg drag & drop handlers toe
+        albumCard.addEventListener('dragover', handleDragOver);
+        albumCard.addEventListener('dragleave', handleDragLeave);
+        albumCard.addEventListener('drop', (e) => {
+            handleDrop(e, handlePhotoDropOnAlbum);
+        });
+
+        container.appendChild(albumCard);
     });
 }
 
@@ -649,62 +662,61 @@ async function handleDeletePage(pageId) {
 
 // Render functies
 function renderPages() {
-    const pagesContainer = document.getElementById('pagesContainer');
-    if (!pagesContainer) return;
+    const container = document.getElementById('pagesContainer');
+    if (!container) return;
 
-    pagesContainer.innerHTML = '';
+    container.innerHTML = '';
     pages.forEach(page => {
-        const pageCard = document.createElement('div');
-        pageCard.className = 'page-card';
-        pageCard.dataset.id = page._id;
-
-        pageCard.innerHTML = `
+        const card = document.createElement('div');
+        card.className = 'page-card';
+        
+        card.innerHTML = `
             <div class="page-header">
-                <h3>${page.title || 'Geen titel'}</h3>
+                <h3 class="page-title">${page.title}</h3>
                 <div class="page-actions">
-                    <button class="btn-edit">
+                    <div class="theme-selector">
+                        <label>Thema:</label>
+                        <select onchange="handlePageThemeChange('${page._id}', this.value)">
+                            <option value="">Standaard</option>
+                            ${(themes || []).map(theme => `
+                                <option value="${theme._id}" ${page.theme && page.theme._id === theme._id ? 'selected' : ''}>
+                                    ${theme.name}
+                                </option>
+                            `).join('')}
+                        </select>
+                    </div>
+                    <button class="btn-primary" onclick="handleEditPage('${page._id}', '${page.title}')" title="Bewerk pagina">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn-delete">
+                    <button class="btn-danger" onclick="handleDeletePage('${page._id}')" title="Verwijder pagina">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
             </div>
+            ${page.theme ? `
+                <div class="page-theme-preview">
+                    <div class="color-grid">
+                        ${renderColorPreviews(page.theme.colors)}
+                    </div>
+                </div>
+            ` : ''}
         `;
-
-        const editBtn = pageCard.querySelector('.btn-edit');
-        const deleteBtn = pageCard.querySelector('.btn-delete');
         
-        editBtn.addEventListener('click', () => handleEditPage(page._id, page.title || ''));
-        deleteBtn.addEventListener('click', () => handleDeletePage(page._id));
-        
-        pagesContainer.appendChild(pageCard);
+        container.appendChild(card);
     });
 }
 
+async function handlePageThemeChange(pageId, themeId) {
+    try {
+        await updatePageTheme(pageId, themeId || null);
+        await loadPages();
+        showMessage('Pagina thema succesvol bijgewerkt');
+    } catch (error) {
+        showMessage('Fout bij bijwerken pagina thema', 'error');
+    }
+}
+
 // Drag and drop handlers
-export function handleDragStart(event, photoId) {
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/plain', photoId);
-    event.target.classList.add('dragging');
-    
-    // Voeg drag-hover class toe aan albums sectie
-    const albumsSection = document.getElementById('albums-section');
-    if (albumsSection && albumsSection.classList.contains('collapsed')) {
-        albumsSection.classList.add('drag-hover');
-    }
-}
-
-export function handleDragEnd(e) {
-    e.target.classList.remove('dragging');
-    // Reset de expand timeout en hover status
-    if (window.expandTimeout) {
-        clearTimeout(window.expandTimeout);
-        window.expandTimeout = null;
-    }
-    document.getElementById('albums-section')?.classList.remove('drag-hover');
-}
-
 export function handleDragOver(e) {
     e.preventDefault();
     const albumsSection = document.getElementById('albums-section');
@@ -772,6 +784,256 @@ export function toggleSection(sectionId) {
     }
 }
 
+// Collapsible sections
+function initializeCollapsibleSections() {
+    const buttons = document.querySelectorAll('.btn-collapse');
+    buttons.forEach(button => {
+        button.addEventListener('click', handleCollapse);
+    });
+}
+
+function handleCollapse(event) {
+    const button = event.currentTarget;
+    const sectionId = button.getAttribute('data-section');
+    const section = document.getElementById(sectionId);
+    if (section) {
+        section.classList.toggle('collapsed');
+        const content = section.querySelector('.section-content');
+        if (content) {
+            if (section.classList.contains('collapsed')) {
+                content.style.display = 'none';
+            } else {
+                content.style.display = 'block';
+            }
+        }
+    }
+}
+
+// Thema management functies
+async function loadThemes() {
+    try {
+        themes = await getThemes();
+        updateItemCounts();
+    } catch (error) {
+        console.error('Error loading themes:', error);
+        showMessage('Fout bij laden van thema\'s', 'error');
+    }
+}
+
+function renderThemes(themes) {
+    const container = document.getElementById('themesContainer');
+    if (!container) return;
+
+    container.innerHTML = '';
+    themes.forEach(theme => {
+        const card = document.createElement('div');
+        card.className = `theme-card ${theme.isActive ? 'active' : ''}`;
+        card.dataset.themeId = theme._id;
+        
+        card.innerHTML = `
+            <div class="theme-header">
+                <h3 class="theme-title">
+                    ${theme.name}
+                    ${theme.isActive ? '<span class="active-badge">Actief</span>' : ''}
+                </h3>
+                <div class="theme-actions">
+                    ${!theme.isActive ? `
+                        <button class="btn-secondary" onclick="handleActivateTheme('${theme._id}')" title="Activeer thema">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    ` : ''}
+                    <button class="btn-danger" onclick="handleDeleteTheme('${theme._id}')" title="Verwijder thema">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="color-grid">
+                ${renderColorPreviews(theme.colors)}
+            </div>
+        `;
+        
+        container.appendChild(card);
+    });
+}
+
+function renderColorPreviews(colors) {
+    const mainColors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info'];
+    return mainColors.map(color => `
+        <div class="color-item">
+            <div class="color-preview" 
+                 style="background-color: ${colors[color]}"
+                 onclick="handleEditColor('${color}', '${colors[color]}')"
+                 title="Klik om te bewerken"></div>
+            <span class="color-label">${color}</span>
+        </div>
+    `).join('');
+}
+
+async function handleCreateTheme() {
+    showConfirmDialog(async (confirmed, name) => {
+        if (confirmed && name) {
+            try {
+                const theme = await createTheme({
+                    name,
+                    colors: {
+                        primary: '#007bff',
+                        secondary: '#6c757d',
+                        success: '#28a745',
+                        danger: '#dc3545',
+                        warning: '#ffc107',
+                        info: '#17a2b8'
+                    }
+                });
+                await loadThemes();
+                showMessage('Thema succesvol aangemaakt');
+            } catch (error) {
+                showMessage('Fout bij aanmaken thema', 'error');
+            }
+        }
+    }, {
+        message: 'Voer een naam in voor het nieuwe thema:',
+        placeholder: 'Thema naam'
+    });
+}
+
+async function handleEditTheme(themeId) {
+    // Implementeer kleurkiezer dialog
+}
+
+async function handleActivateTheme(themeId) {
+    try {
+        await activateTheme(themeId);
+        await loadThemes();
+        await initializeTheme();
+        showMessage('Thema succesvol geactiveerd');
+    } catch (error) {
+        showMessage('Fout bij activeren thema', 'error');
+    }
+}
+
+async function handleDeleteTheme(themeId) {
+    showConfirmDialog(async (confirmed) => {
+        if (confirmed) {
+            try {
+                await deleteTheme(themeId);
+                await loadThemes();
+                showMessage('Thema succesvol verwijderd');
+            } catch (error) {
+                showMessage('Fout bij verwijderen thema', 'error');
+            }
+        }
+    }, {
+        message: 'Weet je zeker dat je dit thema wilt verwijderen?',
+        confirmText: 'Verwijderen',
+        cancelText: 'Annuleren'
+    });
+}
+
+function showColorPickerDialog(themeId, colorKey, currentColor) {
+    currentEditingTheme = themeId;
+    currentEditingColor = colorKey;
+
+    const dialog = document.createElement('div');
+    dialog.className = 'color-picker-dialog';
+    dialog.innerHTML = `
+        <div class="color-picker-header">
+            <h3>Kleur aanpassen</h3>
+            <button class="btn-secondary" onclick="closeColorPickerDialog()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="color-picker-content">
+            <div class="color-preview-large" style="background-color: ${currentColor}"></div>
+            <div class="color-input-group">
+                <input type="color" 
+                       value="${currentColor}" 
+                       onchange="updateColorPreview(this.value)" 
+                       oninput="updateColorPreview(this.value)">
+                <input type="text" 
+                       value="${currentColor}" 
+                       onchange="updateColorPreview(this.value)"
+                       pattern="^#[0-9A-Fa-f]{6}$"
+                       title="Hexadecimale kleurcode (bijv. #FF0000)">
+            </div>
+            <div class="color-picker-actions">
+                <button class="btn-secondary" onclick="closeColorPickerDialog()">Annuleren</button>
+                <button class="btn-primary" onclick="saveColorChange()">Opslaan</button>
+            </div>
+        </div>
+    `;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay';
+    overlay.style.display = 'flex';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    overlay.appendChild(dialog);
+
+    document.body.appendChild(overlay);
+}
+
+function closeColorPickerDialog() {
+    const overlay = document.querySelector('.overlay');
+    if (overlay) {
+        overlay.remove();
+    }
+    currentEditingTheme = null;
+    currentEditingColor = null;
+}
+
+function updateColorPreview(color) {
+    // Valideer hexadecimale kleurcode
+    if (!/^#[0-9A-Fa-f]{6}$/.test(color)) {
+        return;
+    }
+
+    const preview = document.querySelector('.color-preview-large');
+    const colorInput = document.querySelector('input[type="color"]');
+    const textInput = document.querySelector('input[type="text"]');
+
+    preview.style.backgroundColor = color;
+    colorInput.value = color;
+    textInput.value = color;
+}
+
+async function saveColorChange() {
+    const colorInput = document.querySelector('input[type="color"]');
+    const newColor = colorInput.value;
+
+    try {
+        const theme = await getThemes().then(themes => 
+            themes.find(t => t._id === currentEditingTheme)
+        );
+
+        if (!theme) {
+            throw new Error('Thema niet gevonden');
+        }
+
+        const updatedColors = { ...theme.colors };
+        updatedColors[currentEditingColor] = newColor;
+
+        await updateTheme(currentEditingTheme, {
+            colors: updatedColors
+        });
+
+        await loadThemes();
+        if (theme.isActive) {
+            await initializeTheme();
+        }
+
+        closeColorPickerDialog();
+        showMessage('Kleur succesvol bijgewerkt');
+    } catch (error) {
+        showMessage('Fout bij bijwerken kleur', 'error');
+    }
+}
+
+function handleEditColor(colorKey, currentColor) {
+    const themeCard = event.target.closest('.theme-card');
+    const themeId = themeCard.dataset.themeId;
+    showColorPickerDialog(themeId, colorKey, currentColor);
+}
+
 // Exporteer de functies die nodig zijn in de HTML
 export {
     initialize,
@@ -788,9 +1050,19 @@ export {
     handleEditPhoto,
     handleDeletePhoto,
     handleFileUpload,
-    handlePhotoDropOnAlbum
+    handlePhotoDropOnAlbum,
+    handleCollapse,
+    handleCreateTheme,
+    handleEditTheme,
+    handleActivateTheme,
+    handleDeleteTheme,
+    handleEditColor,
+    showColorPickerDialog,
+    closeColorPickerDialog,
+    updateColorPreview,
+    saveColorChange,
+    handlePageThemeChange
 }; 
-
 document.addEventListener('DOMContentLoaded', function() {
     // Bestaande code blijft hier ...
 
@@ -814,3 +1086,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 }); 
+
+function updateItemCounts() {
+    // Update pages count
+    const pagesCount = document.querySelector('#pages-section .item-count');
+    if (pagesCount) {
+        pagesCount.textContent = `(${pages.length})`;
+    }
+
+    // Update albums count
+    const albumsCount = document.querySelector('#albums-section .item-count');
+    if (albumsCount) {
+        albumsCount.textContent = `(${albums.length})`;
+    }
+
+    // Update photos count
+    const photosCount = document.querySelector('#photos-section .item-count');
+    if (photosCount) {
+        photosCount.textContent = `(${photos.length})`;
+    }
+} 

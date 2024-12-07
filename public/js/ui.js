@@ -14,6 +14,25 @@ export function showMessage(message, type = 'success') {
     }, 100);
 }
 
+// LocalStorage helpers
+export function getLocalState(key, defaultValue = null) {
+    const value = localStorage.getItem(key);
+    if (value === null) return defaultValue;
+    try {
+        return JSON.parse(value);
+    } catch (e) {
+        return value;
+    }
+}
+
+export function setLocalState(key, value) {
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+        console.error('Error saving to localStorage:', e);
+    }
+}
+
 export function showConfirmDialog(callback, options = {}) {
     const {
         message = 'Weet je het zeker?',
