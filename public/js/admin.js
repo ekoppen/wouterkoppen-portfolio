@@ -28,6 +28,80 @@ import {
 
 import { initializeTheme } from './theme.js';
 
+// Initialize the application
+document.addEventListener('DOMContentLoaded', () => {
+    initialize();
+
+    // Add event listeners
+    document.querySelectorAll('[data-action]').forEach(element => {
+        const action = element.getAttribute('data-action');
+        switch (action) {
+            case 'createPage':
+                element.addEventListener('click', createPage);
+                break;
+            case 'createAlbum':
+                element.addEventListener('click', createAlbum);
+                break;
+            case 'createTheme':
+                element.addEventListener('click', handleCreateTheme);
+                break;
+            case 'openUploadDialog':
+                element.addEventListener('click', openUploadDialog);
+                break;
+            case 'toggleSelectMode':
+                element.addEventListener('click', toggleSelectMode);
+                break;
+            case 'deleteSelectedPhotos':
+                element.addEventListener('click', deleteSelectedPhotos);
+                break;
+            case 'deselectAll':
+                element.addEventListener('click', deselectAll);
+                break;
+            case 'addAlbum':
+                element.addEventListener('click', addAlbum);
+                break;
+        }
+    });
+
+    // Logout functionaliteit
+    document.getElementById('logoutButton')?.addEventListener('click', () => {
+        localStorage.removeItem('token');
+        window.location.href = '/login.html';
+    });
+
+    // Thumbnail grootte aanpassen
+    const thumbnailSize = document.getElementById('thumbnailSize');
+    const thumbnailSizeValue = document.getElementById('thumbnailSizeValue');
+    const photosGrid = document.getElementById('photosGrid');
+
+    if (thumbnailSize && photosGrid) {
+        thumbnailSize.addEventListener('input', (e) => {
+            const size = e.target.value;
+            document.documentElement.style.setProperty('--thumbnail-size', `${size}px`);
+        });
+    }
+
+    // Make functions available globally for inline event handlers
+    Object.assign(window, {
+        handleEditPage,
+        handleDeletePage,
+        handleEditAlbum,
+        handleDeleteAlbum,
+        handleEditPhoto,
+        handleDeletePhoto,
+        handleCreateTheme,
+        handleEditTheme,
+        handleActivateTheme,
+        handleDeleteTheme,
+        handleEditColor,
+        showColorPickerDialog,
+        closeColorPickerDialog,
+        updateColorPreview,
+        saveColorChange,
+        handlePageThemeChange
+    });
+});
+
 // State management
 let pages = [];
 let photos = [];
@@ -145,7 +219,7 @@ function initializeThumbnailSizeControl() {
     const thumbnailSize = document.getElementById('thumbnailSize');
     const photosGrid = document.getElementById('photosGrid');
 
-    if (thumbnailSize) {
+    if (thumbnailSize && photosGrid) {
         // Configuratie
         const defaultSize = 200;
         thumbnailSize.min = 100;
@@ -156,13 +230,13 @@ function initializeThumbnailSizeControl() {
         const savedSize = parseInt(localStorage.getItem('thumbnailSize')) || defaultSize;
         thumbnailSize.value = savedSize;
         
-        // Update CSS variabele en tekst
+        // Update CSS variabele en grid
         const updateThumbnailSize = (size) => {
             document.documentElement.style.setProperty('--thumbnail-size', `${size}px`);
             localStorage.setItem('thumbnailSize', size);
-            requestAnimationFrame(() => {
+            if (photosGrid) {
                 photosGrid.style.gridTemplateColumns = `repeat(auto-fill, ${size}px)`;
-            });
+            }
         };
 
         // Stel initiële waarde in
@@ -425,6 +499,21 @@ function renderAlbums() {
         if (album.photos && album.photos.length > 0) {
             // Neem de laatste 8 foto's en draai ze om zodat de nieuwste bovenop komt
             const previewPhotos = album.photos.slice(-8).reverse();
+            
+            // Gebruik de laatste foto voor de achtergrondkleur
+            const lastPhoto = album.photos[album.photos.length - 1];
+            if (lastPhoto) {
+                // Laad de afbeelding en bereken de gemiddelde kleur
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.onload = () => {
+                    const avgColor = getAverageColor(img);
+                    // Pas de achtergrondkleur toe met lage opacity voor een subtiel effect
+                    albumCard.style.backgroundColor = `rgba(${avgColor.r}, ${avgColor.g}, ${avgColor.b}, 0.1)`;
+                };
+                img.src = lastPhoto.thumbPath;
+            }
+
             previewPhotos.forEach(photo => {
                 const previewContainer = document.createElement('div');
                 previewContainer.className = 'preview-photo';
@@ -495,6 +584,34 @@ function renderAlbums() {
 
         container.appendChild(albumCard);
     });
+}
+
+// Helper functie om de gemiddelde kleur van een afbeelding te berekenen
+function getAverageColor(img) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    
+    ctx.drawImage(img, 0, 0);
+    
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    
+    let r = 0, g = 0, b = 0;
+    const pixelCount = data.length / 4;
+    
+    for (let i = 0; i < data.length; i += 4) {
+        r += data[i];
+        g += data[i + 1];
+        b += data[i + 2];
+    }
+    
+    return {
+        r: Math.round(r / pixelCount),
+        g: Math.round(g / pixelCount),
+        b: Math.round(b / pixelCount)
+    };
 }
 
 // Album functies
@@ -722,7 +839,7 @@ async function handlePageThemeChange(pageId, themeId) {
 }
 
 // Drag and drop handlers
-export function handleDragOver(e) {
+function handleDragOver(e) {
     e.preventDefault();
     const albumsSection = document.getElementById('albums-section');
     
@@ -754,7 +871,7 @@ export function handleDragOver(e) {
     }
 }
 
-export function handleDragLeave(e) {
+function handleDragLeave(e) {
     const albumCard = e.target.closest('.album-card');
     const relatedTarget = e.relatedTarget?.closest('.album-card');
     
@@ -770,20 +887,33 @@ export function handleDragLeave(e) {
 }
 
 // Helper functie voor het uitklappen/inklappen van secties
-export function toggleSection(sectionId) {
+function toggleSection(sectionId) {
     const section = document.getElementById(sectionId);
     if (section) {
         section.classList.toggle('collapsed');
         const isCollapsed = section.classList.contains('collapsed');
-        localStorage.setItem(`${sectionId}-collapsed`, isCollapsed);
+        localStorage.setItem(`${sectionId}_collapsed`, isCollapsed);
     }
 }
 
 // Collapsible sections
 function initializeCollapsibleSections() {
-    const buttons = document.querySelectorAll('.btn-collapse');
-    buttons.forEach(button => {
-        button.addEventListener('click', handleCollapse);
+    const sections = ['pages-section', 'albums-section', 'photos-section'];
+    sections.forEach(sectionId => {
+        const section = document.getElementById(sectionId);
+        if (section) {
+            // Herstel opgeslagen status
+            const isCollapsed = localStorage.getItem(`${sectionId}_collapsed`) === 'true';
+            if (isCollapsed) {
+                section.classList.add('collapsed');
+            }
+
+            // Event listener voor de collapse knop
+            const button = section.querySelector('.btn-collapse');
+            if (button) {
+                button.addEventListener('click', () => toggleSection(sectionId));
+            }
+        }
     });
 }
 
@@ -1056,31 +1186,11 @@ export {
     closeColorPickerDialog,
     updateColorPreview,
     saveColorChange,
-    handlePageThemeChange
+    handlePageThemeChange,
+    handleDragOver,
+    handleDragLeave,
+    toggleSection
 }; 
-document.addEventListener('DOMContentLoaded', function() {
-    // Bestaande code blijft hier ...
-
-    // Debug code voor hover events
-    const albumCards = document.querySelectorAll('.album-card');
-    albumCards.forEach(card => {
-        card.addEventListener('mouseenter', () => {
-            console.log('Hover start op album card:', card);
-            const photos = card.querySelectorAll('.preview-photo');
-            photos.forEach((photo, index) => {
-                console.log(`Preview photo ${index + 1} transform:`, getComputedStyle(photo).transform);
-            });
-        });
-        
-        card.addEventListener('mouseleave', () => {
-            console.log('Hover einde op album card:', card);
-            const photos = card.querySelectorAll('.preview-photo');
-            photos.forEach((photo, index) => {
-                console.log(`Preview photo ${index + 1} transform:`, getComputedStyle(photo).transform);
-            });
-        });
-    });
-}); 
 
 function updateItemCounts() {
     // Update pages count
