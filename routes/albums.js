@@ -154,14 +154,21 @@ router.post('/', auth, async (req, res) => {
 // Album bijwerken
 router.put('/:id', auth, async (req, res) => {
     try {
-        const { title } = req.body;
-        if (!title) {
-            return res.status(400).json({ error: 'Titel is verplicht' });
+        const { title, description } = req.body;
+        const updateData = {};
+        
+        // Voeg velden toe aan updateData als ze aanwezig zijn
+        if (title !== undefined) updateData.title = title;
+        if (description !== undefined) updateData.description = description;
+        
+        // Check of er iets te updaten is
+        if (Object.keys(updateData).length === 0) {
+            return res.status(400).json({ error: 'Geen data om bij te werken' });
         }
 
         const album = await Album.findByIdAndUpdate(
             req.params.id,
-            { title },
+            updateData,
             { new: true }
         );
 

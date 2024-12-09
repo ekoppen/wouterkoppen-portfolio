@@ -57,7 +57,37 @@
                     </div>
                 </div>
                 <div class="section-content">
-                    <div id="albumsContainer" class="albums-container"></div>
+                    <div id="albumsContainer" class="albums-container">
+                        <div class="album-card" onclick="showAlbumDetails(album)">
+                            <div class="album-preview">
+                                <img src="${album.photos[0]?.path || '/images/placeholder.jpg'}" 
+                                     alt="${album.title}" 
+                                     class="preview-photo">
+                            </div>
+                            <div class="album-info">
+                                <h3>${album.title}</h3>
+                                <p>${album.photos?.length || 0} foto's</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="album-view" class="section-collapsible" style="display: none;">
+                <div class="section-header">
+                    <h2 id="albumTitle">Album</h2>
+                    <div class="section-actions">
+                        <button class="btn-secondary" data-action="backToAlbums" title="Terug naar Albums">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <div class="thumbnail-control">
+                            <i class="fas fa-image" title="Thumbnail grootte"></i>
+                            <input type="range" id="albumThumbnailSize" min="100" max="400" step="50" value="200" title="Pas thumbnail grootte aan">
+                        </div>
+                    </div>
+                </div>
+                <div class="section-content">
+                    <div id="albumPhotosGrid" class="photos-grid"></div>
                 </div>
             </section>
 
@@ -93,18 +123,43 @@
         </div>
 
         <aside class="info-section">
-            <div class="default-content">
-                <h2>Info</h2>
-                <div class="info-content">
-                    <p>Welkom in het admin dashboard. Hier kun je je website beheren:</p>
-                    <ul>
-                        <li>Beheer je pagina's</li>
-                        <li>Organiseer je fotoalbums</li>
-                        <li>Upload en beheer foto's</li>
-                    </ul>
+            <div class="album-details" style="display: none;">
+                <h2>Album Details</h2>
+                <div class="editable-field">
+                    <label>Titel</label>
+                    <div class="edit-container">
+                        <span id="albumTitleDisplay" class="editable-text"></span>
+                        <button class="btn-icon btn-edit" onclick="startEditingAlbumTitle()" title="Bewerk titel">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="editable-field">
+                    <label>Beschrijving</label>
+                    <div class="edit-container">
+                        <span id="albumDescriptionDisplay" class="editable-text"></span>
+                        <button class="btn-icon btn-edit" onclick="startEditingAlbumDescription()" title="Bewerk beschrijving">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="album-stats">
+                    <dl>
+                        <dt>Aantal foto's</dt>
+                        <dd id="albumPhotoCount">-</dd>
+                        <dt>Aangemaakt op</dt>
+                        <dd id="albumCreatedAt">-</dd>
+                        <dt>Laatst bijgewerkt</dt>
+                        <dd id="albumUpdatedAt">-</dd>
+                    </dl>
+                </div>
+                <div class="album-actions">
+                    <button class="btn-danger" onclick="handleDeleteAlbum(currentAlbumId)" title="Verwijder album">
+                        <i class="fas fa-trash"></i> Verwijder Album
+                    </button>
                 </div>
             </div>
-            <div class="photo-details">
+            <div class="photo-details" style="display: none;">
                 <h2>Foto Details</h2>
                 <img id="selected-photo" src="" alt="Geselecteerde foto">
                 <h3>Bestandsinformatie</h3>
@@ -120,8 +175,6 @@
                     
                     <dt>Type</dt>
                     <dd id="photo-type">-</dd>
-                    
-                    <!-- EXIF data wordt hier dynamisch ingevoegd -->
                 </dl>
             </div>
         </aside>

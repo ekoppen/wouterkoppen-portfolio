@@ -64,10 +64,10 @@ export async function deleteAlbum(albumId) {
     return response.json();
 }
 
-export async function editAlbum(albumId, title) {
+export async function editAlbum(albumId, updates) {
     const response = await fetchWithAuth(`/api/albums/${albumId}`, {
         method: 'PUT',
-        body: JSON.stringify({ title })
+        body: JSON.stringify(updates)
     });
     if (!response.ok) throw new Error('Fout bij bewerken van album');
     return response.json();

@@ -189,12 +189,33 @@ main {
 
 /* Info section */
 .info-section {
-    background: white;
-    border-radius: 8px;
-    padding: 1rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background: var(--bg-surface);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    box-shadow: var(--shadow-sm);
     position: sticky;
-    top: 2rem;
+    top: var(--spacing-md);
+    max-height: calc(100vh - 2 * var(--spacing-md));
+    overflow-y: auto;
+}
+
+/* Zorg voor een mooie scrollbar */
+.info-section::-webkit-scrollbar {
+    width: 8px;
+}
+
+.info-section::-webkit-scrollbar-track {
+    background: var(--bg-surface);
+    border-radius: var(--radius-md);
+}
+
+.info-section::-webkit-scrollbar-thumb {
+    background: var(--color-gray-300);
+    border-radius: var(--radius-md);
+}
+
+.info-section::-webkit-scrollbar-thumb:hover {
+    background: var(--color-gray-400);
 }
 
 .info-section .default-content {
@@ -227,10 +248,15 @@ main {
 }
 
 .photo-details dl {
-    margin: 0;
+    margin: 0 0 var(--spacing-lg) 0;
     display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 0.5rem 1rem;
+    grid-template-columns: minmax(140px, auto) 1fr;
+    gap: 0.75rem 1.5rem;
+    align-items: baseline;
+}
+
+.photo-details dl:last-child {
+    margin-bottom: 0;
 }
 
 .photo-details dt {
@@ -553,74 +579,92 @@ section {
 /* Album stijlen */
 .albums-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 1rem;
     padding: 1rem;
 }
 
-.albums-container .album-card {
+.album-card {
     background: var(--bg-surface);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4), 0 3px 6px rgba(0, 0, 0, 0.35);
     overflow: hidden;
     transition: box-shadow var(--transition-normal);
     cursor: pointer;
     margin-bottom: var(--spacing-md);
 }
 
-.albums-container .album-card:hover {
-    box-shadow: var(--shadow-hover);
+.album-card:hover {
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45), 0 6px 10px rgba(0, 0, 0, 0.4);
 }
 
-/* Album header stijlen */
-.album-header {
+.album-card .album-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: var(--spacing-xs) var(--spacing-md);
+    align-items: flex-start;
+    padding: var(--spacing-xs) var(--spacing-lg);
     background: var(--bg-surface);
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    border: none;
 }
 
-.album-header .album-title {
+.album-card .album-title {
     flex: 1;
-    line-height: 1;
+    padding-top: 4px;
 }
 
-.album-header .album-title h3 {
+.album-card .album-title h3 {
     margin: 0;
     font-size: 1.1rem;
     color: var(--text-primary);
     line-height: 1.2;
 }
 
-.album-header .photo-count {
-    margin: 0;
+.album-card .photo-count {
+    margin: var(--spacing-xs) 0 0 0;
     font-size: 0.85rem;
     color: var(--text-secondary);
     line-height: 1.2;
 }
 
-.album-header .album-actions {
+.album-card .album-actions {
     display: flex;
     gap: var(--spacing-xs);
     margin-left: var(--spacing-sm);
+    align-items: flex-start;
+    border: none;
+    margin-top: -4px;
 }
 
-.album-actions {
+.album-card .album-actions .btn-icon {
+    padding: 0;
+    width: 32px;
+    height: 32px;
     display: flex;
-    gap: var(--spacing-sm);
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: var(--radius-full);
+    transition: all var(--transition-fast);
 }
 
-.albums-container .album-preview {
-    flex: 1;
+.album-card .album-actions .btn-icon:hover {
+    background-color: var(--bg-surface-hover);
+    color: var(--text-primary);
+}
+
+.album-preview {
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 1rem;
     overflow: hidden;
-    background: var(--bg-light);
+    background: var(--bg-surface);
+    min-height: 200px;
+    transition: background-color var(--transition-normal);
 }
 
 .albums-container .preview-photo {
@@ -629,7 +673,7 @@ section {
     height: 130px;
     background: white;
     padding: 5px;
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 0 6px 20px rgba(0, 0, 0, 0.1);
     transform-origin: center center;
     transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
     pointer-events: none;
@@ -640,6 +684,7 @@ section {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    border-radius: 2px;
 }
 
 /* Basis posities voor de preview foto's */
@@ -685,8 +730,54 @@ section {
 
 .no-photos {
     color: var(--text-secondary);
-    text-align: center;
-    font-size: 0.9rem;
+    font-style: italic;
+}
+
+/* Album details styling */
+.album-details {
+    padding: var(--spacing-lg);
+}
+
+.album-details h2 {
+    font-family: var(--font-primary);
+    font-weight: var(--font-medium);
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin: 0 0 var(--spacing-lg) 0;
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.album-actions {
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.album-actions .btn-danger {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: none;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-danger);
+    color: var(--color-white);
+    font-family: var(--font-primary);
+    font-size: 0.875rem;
+    font-weight: var(--font-medium);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.album-actions .btn-danger:hover {
+    background-color: color-mix(in srgb, var(--color-danger) 90%, black);
+}
+
+.album-actions .btn-danger i {
+    font-size: 0.875rem;
 }
 
 /* Album content (expanded state) */
@@ -1053,7 +1144,7 @@ section {
     top: -20px;
     margin: var(--spacing-sm) auto;
     padding: var(--spacing-md);
-    background: var(--bg-light);
+    background: var(--bg-surface);
     border-radius: var(--radius-md);
     position: relative;
     min-height: 220px;
@@ -1128,6 +1219,10 @@ section {
     align-items: baseline;
 }
 
+.photo-details dl:last-child {
+    margin-bottom: 0;
+}
+
 .photo-details dt {
     font-weight: var(--font-medium);
     color: var(--text-secondary);
@@ -1155,5 +1250,214 @@ section {
     font-family: var(--font-primary);
     font-weight: var(--font-medium);
     letter-spacing: -0.01em;
+}
+
+#album-view {
+    transition: all 0.3s ease;
+}
+
+#album-view .photos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, var(--thumbnail-size, 200px));
+    gap: 20px;
+    justify-content: center;
+    padding: 20px;
+}
+
+#album-view .photo-card {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    cursor: move;
+}
+
+#album-view .photo-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+}
+
+#album-view .photo-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+#album-view .photo-card.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+}
+
+#album-view .photo-card.drag-over {
+    transform: scale(1.05);
+    box-shadow: var(--shadow-lg);
+}
+
+.editable-field {
+    margin-bottom: var(--spacing-lg);
+}
+
+.editable-field label {
+    display: block;
+    font-family: var(--font-primary);
+    font-weight: var(--font-medium);
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.edit-container {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    position: relative;
+}
+
+.editable-text {
+    flex: 1;
+    padding: var(--spacing-sm);
+    background-color: var(--bg-surface);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    min-height: 1.5rem;
+    line-height: 1.5;
+    font-family: var(--font-primary);
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.editable-input {
+    flex: 1;
+    width: 100%;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-primary);
+    font-size: 1rem;
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
+    resize: none;
+    overflow: hidden;
+    transition: height var(--transition-fast);
+    min-height: 1.5rem;
+    line-height: 1.5;
+}
+
+.editable-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+
+.btn-edit {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--color-primary);
+    cursor: pointer;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.btn-edit:hover {
+    background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+.btn-edit i {
+    font-size: 1rem;
+}
+
+.btn-delete {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--color-danger);
+    cursor: pointer;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.btn-delete:hover {
+    background-color: color-mix(in srgb, var(--color-danger) 10%, transparent);
+}
+
+.btn-delete i {
+    font-size: 1rem;
+}
+
+.album-stats {
+    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+}
+
+.album-stats dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--spacing-sm) var(--spacing-lg);
+    margin: 0;
+}
+
+.album-stats dt {
+    font-family: var(--font-primary);
+    font-weight: var(--font-medium);
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.album-stats dd {
+    font-family: var(--font-primary);
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.album-actions {
+    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+}
+
+.btn-save {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--color-success);
+    cursor: pointer;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.btn-save:hover {
+    background-color: color-mix(in srgb, var(--color-success) 10%, transparent);
+}
+
+.btn-save i {
+    font-size: 1rem;
 }
  

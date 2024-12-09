@@ -98,7 +98,9 @@ document.addEventListener('DOMContentLoaded', () => {
         closeColorPickerDialog,
         updateColorPreview,
         saveColorChange,
-        handlePageThemeChange
+        handlePageThemeChange,
+        startEditingAlbumTitle,
+        startEditingAlbumDescription
     });
 });
 
@@ -111,6 +113,7 @@ let isSelectMode = false;
 let selectedPhotos = new Set();
 let currentEditingTheme = null;
 let currentEditingColor = null;
+let currentAlbumId = null;
 
 // Auth check functie
 async function checkAuth() {
@@ -358,7 +361,7 @@ async function handleEditAlbum(albumId, currentTitle) {
     showConfirmDialog(async (confirmed, newTitle) => {
         if (confirmed && newTitle) {
             try {
-                await editAlbum(albumId, newTitle);
+                await editAlbum(albumId, { title: newTitle });
                 await loadAlbums();
                 showMessage('Album succesvol bewerkt');
             } catch (error) {
@@ -465,12 +468,6 @@ function renderAlbums() {
         albumCard.className = 'album-card';
         albumCard.dataset.id = album._id;
 
-        // Laad opgeslagen staat
-        const isExpanded = getLocalState(`album_${album._id}_expanded`, false);
-        if (isExpanded) {
-            albumCard.classList.add('expanded');
-        }
-
         // Album header
         const albumHeader = document.createElement('div');
         albumHeader.className = 'album-header';
@@ -497,6 +494,15 @@ function renderAlbums() {
         if (album.photos && album.photos.length > 0) {
             // Neem de laatste 8 foto's en draai ze om zodat de nieuwste bovenop komt
             const previewPhotos = album.photos.slice(-8).reverse();
+            
+            // Laad de eerste foto om de gemiddelde kleur te bepalen
+            const firstPhoto = new Image();
+            firstPhoto.crossOrigin = "Anonymous";  // Nodig voor canvas operaties
+            firstPhoto.src = previewPhotos[0].path;
+            firstPhoto.onload = () => {
+                const avgColor = getAverageColor(firstPhoto);
+                albumPreview.style.backgroundColor = `rgba(${avgColor.r}, ${avgColor.g}, ${avgColor.b}, 0.2)`;
+            };
             
             previewPhotos.forEach(photo => {
                 const previewContainer = document.createElement('div');
@@ -534,6 +540,8 @@ function renderAlbums() {
 
         container.appendChild(albumCard);
     });
+
+    updateItemCounts();
 }
 
 // Helper functie om de gemiddelde kleur van een afbeelding te berekenen
@@ -1164,13 +1172,23 @@ function updateItemCounts() {
 
 // Foto details functies
 async function showPhotoDetails(photo) {
-    const infoSection = document.querySelector('.info-section');
-    infoSection.classList.add('showing-photo');
+    const photoDetails = document.querySelector('.photo-details');
+    if (!photoDetails) return;
+
+    // Verberg album details en toon foto details
+    document.querySelector('.album-details').style.display = 'none';
+    photoDetails.style.display = 'block';
+
+    // Update de preview afbeelding
+    const selectedPhoto = document.getElementById('selected-photo');
+    if (selectedPhoto) {
+        selectedPhoto.src = photo.path;
+        selectedPhoto.alt = photo.title || 'Geselecteerde foto';
+    }
 
     // Update basis foto informatie
-    document.getElementById('selected-photo').src = photo.path;
-    document.getElementById('photo-filename').textContent = photo.title || 'Onbekende naam';
-    document.getElementById('photo-type').textContent = photo.mimetype || 'image/jpeg';
+    document.getElementById('photo-filename').textContent = photo.filename;
+    document.getElementById('photo-type').textContent = photo.mimetype;
 
     try {
         // Haal foto metadata op van de server
@@ -1188,6 +1206,10 @@ async function showPhotoDetails(photo) {
 
         // Update EXIF data
         const photoInfo = document.getElementById('photo-info');
+        
+        // Verwijder bestaande EXIF velden
+        const existingFields = photoInfo.querySelectorAll('dt:nth-of-type(n+5), dd:nth-of-type(n+5)');
+        existingFields.forEach(field => field.remove());
         
         if (metadata.exif) {
             // Definieer welke EXIF velden we willen tonen en in welke volgorde
@@ -1207,18 +1229,15 @@ async function showPhotoDetails(photo) {
                     return `ISO ${value}`;
                 }},
                 { key: 'FocalLength', label: 'Brandpuntafstand', format: value => {
-                    // Check of value een array is
                     if (Array.isArray(value) && value.length > 0) {
-                        value = value[0]; // Gebruik het eerste element
+                        value = value[0];
                     }
                     if (!value || isNaN(value)) return '-';
                     return `${Math.round(value)}mm`;
                 }},
                 { key: 'DateTimeOriginal', label: 'Opnamedatum', format: value => {
                     if (!value) return '-';
-                    // Controleer of de datum een string is in het formaat "YYYY:MM:DD HH:mm:ss"
                     if (typeof value === 'string' && value.includes(':')) {
-                        // Vervang : door - in de datum (maar niet in de tijd)
                         const [date, time] = value.split(' ');
                         const formattedDate = date.replace(/:/g, '-');
                         const dateString = `${formattedDate} ${time}`;
@@ -1248,7 +1267,46 @@ async function showPhotoDetails(photo) {
         console.error('Fout bij laden foto details:', error);
         showMessage('Fout bij laden van foto details', 'error');
     }
-} 
+}
+
+// Helper functie om bestandsgrootte te formatteren
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Album details bewerken
+function showAlbumDetails(album) {
+    if (!album) return;
+    
+    setCurrentAlbum(album._id);
+    
+    const albumDetails = document.querySelector('.album-details');
+    const photoDetails = document.querySelector('.photo-details');
+    
+    if (albumDetails && photoDetails) {
+        albumDetails.style.display = 'block';
+        photoDetails.style.display = 'none';
+    }
+
+    // Update album informatie
+    const titleDisplay = document.getElementById('albumTitleDisplay');
+    const descriptionDisplay = document.getElementById('albumDescriptionDisplay');
+    const photoCount = document.getElementById('albumPhotoCount');
+    const createdAt = document.getElementById('albumCreatedAt');
+    const updatedAt = document.getElementById('albumUpdatedAt');
+    const albumTitle = document.getElementById('albumTitle');
+    
+    if (titleDisplay) titleDisplay.textContent = album.title || '';
+    if (descriptionDisplay) descriptionDisplay.textContent = album.description || '';
+    if (photoCount) photoCount.textContent = album.photos ? album.photos.length : 0;
+    if (createdAt) createdAt.textContent = formatDate(album.createdAt);
+    if (updatedAt) updatedAt.textContent = formatDate(album.updatedAt);
+    if (albumTitle) albumTitle.textContent = album.title || '';
+}
 
 // Album view functies
 async function showAlbumView(albumId) {
@@ -1270,11 +1328,17 @@ async function showAlbumView(albumId) {
         // Update titel
         document.getElementById('albumTitle').textContent = album.title;
         
+        // Toon album details
+        showAlbumDetails(album);
+        
         // Laad foto's
         await loadAlbumPhotos(albumId);
         
         // Initialiseer drag & drop
         initializeAlbumDragAndDrop();
+        
+        // Initialiseer thumbnail size control
+        initializeAlbumThumbnailControl();
         
     } catch (error) {
         console.error('Error loading album view:', error);
@@ -1430,4 +1494,179 @@ function createPhotoCard(photo) {
     });
 
     return photoCard;
+}
+
+// Thumbnail size control voor album view
+function initializeAlbumThumbnailControl() {
+    const thumbnailSize = document.getElementById('albumThumbnailSize');
+    const photosGrid = document.getElementById('albumPhotosGrid');
+
+    if (thumbnailSize && photosGrid) {
+        // Configuratie
+        const defaultSize = 200;
+        thumbnailSize.min = 100;
+        thumbnailSize.max = 400;
+        thumbnailSize.step = 50;
+
+        // Laad opgeslagen grootte of gebruik standaard
+        const savedSize = parseInt(localStorage.getItem('albumThumbnailSize')) || defaultSize;
+        thumbnailSize.value = savedSize;
+        
+        // Update CSS variabele en grid
+        const updateThumbnailSize = (size) => {
+            document.documentElement.style.setProperty('--thumbnail-size', `${size}px`);
+            localStorage.setItem('albumThumbnailSize', size);
+            if (photosGrid) {
+                photosGrid.style.gridTemplateColumns = `repeat(auto-fill, ${size}px)`;
+            }
+        };
+
+        // Stel initiële waarde in
+        updateThumbnailSize(savedSize);
+
+        // Event listener voor de slider
+        thumbnailSize.addEventListener('input', (e) => {
+            const size = parseInt(e.target.value);
+            updateThumbnailSize(size);
+        });
+    }
+}
+
+// Voeg een functie toe om het huidige album ID in te stellen
+function setCurrentAlbum(albumId) {
+    currentAlbumId = albumId;
+    // Update de album details sectie
+    const albumDetailsSection = document.querySelector('.album-details');
+    if (albumDetailsSection) {
+        albumDetailsSection.style.display = 'block';
+    }
+}
+
+// Helper functie voor datum formatting
+function formatDate(dateString) {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleString('nl-NL');
+}
+
+// Album bewerken functies
+function startEditingAlbumTitle() {
+    const displayContainer = document.getElementById('albumTitleDisplay').parentElement;
+    const display = document.getElementById('albumTitleDisplay');
+    const editButton = displayContainer.querySelector('.btn-edit');
+    if (!display || !currentAlbumId) return;
+    
+    const currentTitle = display.textContent;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = currentTitle;
+    input.className = 'editable-input';
+
+    // Vervang edit knop met save knop
+    const saveButton = document.createElement('button');
+    saveButton.className = 'btn-icon btn-save';
+    saveButton.title = 'Opslaan';
+    saveButton.innerHTML = '<i class="fas fa-check"></i>';
+    editButton.style.display = 'none';
+    displayContainer.appendChild(saveButton);
+    
+    const saveChanges = async () => {
+        const newTitle = input.value.trim();
+        if (newTitle !== currentTitle) {
+            try {
+                await editAlbum(currentAlbumId, { title: newTitle });
+                display.textContent = newTitle;
+                // Update de hoofdtitel ook
+                const albumTitleHeader = document.getElementById('albumTitle');
+                if (albumTitleHeader) {
+                    albumTitleHeader.textContent = newTitle;
+                }
+            } catch (error) {
+                console.error('Error updating album title:', error);
+                showMessage('Fout bij bijwerken van albumtitel', 'error');
+                display.textContent = currentTitle;
+            }
+        } else {
+            display.textContent = currentTitle;
+        }
+        displayContainer.replaceChild(display, input);
+        editButton.style.display = '';
+        saveButton.remove();
+    };
+    
+    input.onblur = saveChanges;
+    saveButton.onclick = (e) => {
+        e.preventDefault();
+        saveChanges();
+    };
+    input.onkeypress = (e) => {
+        if (e.key === 'Enter') {
+            saveChanges();
+        }
+    };
+    
+    displayContainer.replaceChild(input, display);
+    input.focus();
+}
+
+// Helper functie om textarea automatisch te laten groeien
+function autoGrowTextarea(element) {
+    element.style.height = 'auto';
+    element.style.height = (element.scrollHeight) + 'px';
+}
+
+function startEditingAlbumDescription() {
+    const displayContainer = document.getElementById('albumDescriptionDisplay').parentElement;
+    const display = document.getElementById('albumDescriptionDisplay');
+    const editButton = displayContainer.querySelector('.btn-edit');
+    if (!display || !currentAlbumId) return;
+    
+    const currentDescription = display.textContent;
+    const textarea = document.createElement('textarea');
+    textarea.value = currentDescription;
+    textarea.className = 'editable-input';
+
+    // Initiële hoogte instellen
+    textarea.style.minHeight = '1.5rem';
+    
+    // Event listener voor automatisch groeien
+    textarea.addEventListener('input', () => autoGrowTextarea(textarea));
+
+    // Vervang edit knop met save knop
+    const saveButton = document.createElement('button');
+    saveButton.className = 'btn-icon btn-save';
+    saveButton.title = 'Opslaan';
+    saveButton.innerHTML = '<i class="fas fa-check"></i>';
+    editButton.style.display = 'none';
+    displayContainer.appendChild(saveButton);
+    
+    const saveChanges = async () => {
+        const newDescription = textarea.value.trim();
+        if (newDescription !== currentDescription) {
+            try {
+                await editAlbum(currentAlbumId, { description: newDescription });
+                display.textContent = newDescription;
+            } catch (error) {
+                console.error('Error updating album description:', error);
+                showMessage('Fout bij bijwerken van albumbeschrijving', 'error');
+                display.textContent = currentDescription;
+            }
+        } else {
+            display.textContent = currentDescription;
+        }
+        displayContainer.replaceChild(display, textarea);
+        editButton.style.display = '';
+        saveButton.remove();
+    };
+    
+    textarea.onblur = saveChanges;
+    saveButton.onclick = (e) => {
+        e.preventDefault();
+        saveChanges();
+    };
+    
+    displayContainer.replaceChild(textarea, display);
+    textarea.focus();
+    
+    // Pas initiële hoogte aan
+    autoGrowTextarea(textarea);
 }
