@@ -1235,45 +1235,61 @@ async function showPhotoDetails(photo) {
         document.getElementById('photo-size').textContent = `${sizeInMB} MB`;
 
         // Update EXIF data
-        const exifContainer = document.getElementById('exif-data');
-        exifContainer.innerHTML = '';
-
+        const photoInfo = document.getElementById('photo-info');
+        
         if (metadata.exif) {
-            const displayNames = {
-                'ImageHeight': 'Hoogte',
-                'ImageWidth': 'Breedte',
-                'ColorComponents': 'Kleurcomponenten',
-                'BitsPerSample': 'Bits per sample',
-                'ResolutionUnit': 'Resolutie eenheid',
-                'XResolution': 'X-Resolutie',
-                'YResolution': 'Y-Resolutie',
-                'FileType': 'Bestandstype',
-                'Subsampling': 'Subsampling',
-                'Make': 'Camera merk',
-                'Model': 'Camera model',
-                'LensModel': 'Lens model',
-                'LensMake': 'Lens merk',
-                'ExposureTime': 'Sluitertijd',
-                'FNumber': 'Diafragma',
-                'ISO': 'ISO',
-                'FocalLength': 'Brandpuntafstand',
-                'DateTimeOriginal': 'Opnamedatum',
-                'GPSLatitude': 'Breedtegraad',
-                'GPSLongitude': 'Lengtegraad'
-            };
+            // Definieer welke EXIF velden we willen tonen en in welke volgorde
+            const exifFields = [
+                { key: 'Make', label: 'Camera merk' },
+                { key: 'Model', label: 'Camera model' },
+                { key: 'ExposureTime', label: 'Sluitertijd', format: value => {
+                    if (!value || isNaN(value)) return '-';
+                    return `1/${Math.round(1/value)}s`;
+                }},
+                { key: 'FNumber', label: 'Diafragma', format: value => {
+                    if (!value || isNaN(value)) return '-';
+                    return `f/${value}`;
+                }},
+                { key: 'ISO', label: 'ISO', format: value => {
+                    if (!value || isNaN(value)) return '-';
+                    return `ISO ${value}`;
+                }},
+                { key: 'FocalLength', label: 'Brandpuntafstand', format: value => {
+                    // Check of value een array is
+                    if (Array.isArray(value) && value.length > 0) {
+                        value = value[0]; // Gebruik het eerste element
+                    }
+                    if (!value || isNaN(value)) return '-';
+                    return `${Math.round(value)}mm`;
+                }},
+                { key: 'DateTimeOriginal', label: 'Opnamedatum', format: value => {
+                    if (!value) return '-';
+                    // Controleer of de datum een string is in het formaat "YYYY:MM:DD HH:mm:ss"
+                    if (typeof value === 'string' && value.includes(':')) {
+                        // Vervang : door - in de datum (maar niet in de tijd)
+                        const [date, time] = value.split(' ');
+                        const formattedDate = date.replace(/:/g, '-');
+                        const dateString = `${formattedDate} ${time}`;
+                        const date_obj = new Date(dateString);
+                        if (isNaN(date_obj.getTime())) return '-';
+                        return date_obj.toLocaleString('nl-NL');
+                    }
+                    return '-';
+                }}
+            ];
 
-            for (const [key, value] of Object.entries(metadata.exif)) {
-                if (value !== null && value !== undefined) {
+            // Loop door de gewenste velden
+            exifFields.forEach(field => {
+                const value = metadata.exif[field.key];
+                if (value) {
                     const dt = document.createElement('dt');
-                    dt.textContent = displayNames[key] || key;
+                    dt.textContent = field.label;
                     const dd = document.createElement('dd');
-                    dd.textContent = value.toString();
-                    exifContainer.appendChild(dt);
-                    exifContainer.appendChild(dd);
+                    dd.textContent = field.format ? field.format(value) : value;
+                    photoInfo.appendChild(dt);
+                    photoInfo.appendChild(dd);
                 }
-            }
-        } else {
-            exifContainer.innerHTML = '<dt>EXIF Data</dt><dd>Geen EXIF data beschikbaar</dd>';
+            });
         }
 
     } catch (error) {
