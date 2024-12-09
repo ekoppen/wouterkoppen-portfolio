@@ -15,76 +15,119 @@
                 <h1>Admin Dashboard</h1>
             </div>
             <div class="nav-links">
-                <a href="/" class="btn">Bekijk website</a>
-                <button class="btn-secondary" id="logoutButton">Uitloggen</button>
+                <a href="/" class="btn-icon btn-view" title="Bekijk website">
+                    <i class="fas fa-external-link-alt"></i>
+                </a>
+                <button class="btn-icon btn-logout" id="logoutButton" title="Uitloggen">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
             </div>
         </nav>
     </header>
 
     <main>
-        <section id="pages-section" class="section-collapsible">
-            <div class="section-header">
-                <h2>Pagina's <span class="item-count">0</span></h2>
-                <div class="section-actions">
-                    <button class="btn-primary" data-action="createPage" title="Nieuwe Pagina">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                    <button class="btn-collapse" data-section="pages-section">
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="section-content">
-                <div id="pagesContainer"></div>
-            </div>
-        </section>
-
-        <section id="albums-section" class="section-collapsible">
-            <div class="section-header">
-                <h2>Albums <span class="item-count">0</span></h2>
-                <div class="section-actions">
-                    <button class="btn-primary" data-action="createAlbum" title="Nieuw Album">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                    <button class="btn-collapse" data-section="albums-section">
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="section-content">
-                <div id="albumsContainer" class="albums-container"></div>
-            </div>
-        </section>
-
-        <section id="photos-section" class="section-collapsible">
-            <div class="section-header">
-                <h2>Foto's <span class="item-count">0</span></h2>
-                <div class="section-actions">
-                    <button class="btn-primary" data-action="openUploadDialog" title="Upload Foto's">
-                        <i class="fas fa-upload"></i>
-                    </button>
-                    <button class="btn-secondary" data-action="toggleSelectMode" title="Selecteer Meerdere">
-                        <i class="fas fa-check-square"></i>
-                    </button>
-                    <button class="btn-danger" data-action="deleteSelectedPhotos" style="display: none;" title="Verwijder Geselecteerde">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                    <button class="btn-secondary" data-action="deselectAll" style="display: none;" title="Deselecteer Alles">
-                        <i class="fas fa-times"></i>
-                    </button>
-                    <div class="thumbnail-control">
-                        <i class="fas fa-image" title="Thumbnail grootte"></i>
-                        <input type="range" id="thumbnailSize" min="100" max="400" step="50" value="200" title="Pas thumbnail grootte aan">
+        <div class="sections-container">
+            <section id="pages-section" class="section-collapsible">
+                <div class="section-header">
+                    <h2>Pagina's <span class="item-count">0</span></h2>
+                    <div class="section-actions">
+                        <button class="btn-primary" data-action="createPage" title="Nieuwe Pagina">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <button class="btn-collapse" data-section="pages-section">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
                     </div>
-                    <button class="btn-collapse" data-section="photos-section">
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
+                </div>
+                <div class="section-content">
+                    <div id="pagesContainer"></div>
+                </div>
+            </section>
+
+            <section id="albums-section" class="section-collapsible">
+                <div class="section-header">
+                    <h2>Albums <span class="item-count">0</span></h2>
+                    <div class="section-actions">
+                        <button class="btn-primary" data-action="createAlbum" title="Nieuw Album">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <button class="btn-collapse" data-section="albums-section">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="section-content">
+                    <div id="albumsContainer" class="albums-container"></div>
+                </div>
+            </section>
+
+            <section id="photos-section" class="section-collapsible">
+                <div class="section-header">
+                    <h2>Foto's <span class="item-count">0</span></h2>
+                    <div class="section-actions">
+                        <button class="btn-primary" data-action="openUploadDialog" title="Upload Foto's">
+                            <i class="fas fa-upload"></i>
+                        </button>
+                        <button class="btn-secondary" data-action="toggleSelectMode" title="Selecteer Meerdere">
+                            <i class="fas fa-check-square"></i>
+                        </button>
+                        <button class="btn-danger" data-action="deleteSelectedPhotos" style="display: none;" title="Verwijder Geselecteerde">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <button class="btn-secondary" data-action="deselectAll" style="display: none;" title="Deselecteer Alles">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <div class="thumbnail-control">
+                            <i class="fas fa-image" title="Thumbnail grootte"></i>
+                            <input type="range" id="thumbnailSize" min="100" max="400" step="50" value="200" title="Pas thumbnail grootte aan">
+                        </div>
+                        <button class="btn-collapse" data-section="photos-section">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="section-content">
+                    <div id="photosGrid" class="photos-grid"></div>
+                </div>
+            </section>
+        </div>
+
+        <aside class="info-section">
+            <div class="default-content">
+                <h2>Info</h2>
+                <div class="info-content">
+                    <p>Welkom in het admin dashboard. Hier kun je je website beheren:</p>
+                    <ul>
+                        <li>Beheer je pagina's</li>
+                        <li>Organiseer je fotoalbums</li>
+                        <li>Upload en beheer foto's</li>
+                    </ul>
                 </div>
             </div>
-            <div class="section-content">
-                <div id="photosGrid" class="photos-grid"></div>
+            <div class="photo-details">
+                <h2>Foto Details</h2>
+                <img id="selected-photo" src="" alt="Geselecteerde foto">
+                <h3>Bestandsinformatie</h3>
+                <dl>
+                    <dt>Bestandsnaam</dt>
+                    <dd id="photo-filename">-</dd>
+                    
+                    <dt>Afmetingen</dt>
+                    <dd id="photo-dimensions">-</dd>
+                    
+                    <dt>Bestandsgrootte</dt>
+                    <dd id="photo-size">-</dd>
+                    
+                    <dt>Type</dt>
+                    <dd id="photo-type">-</dd>
+                </dl>
+                
+                <h3>EXIF Data</h3>
+                <dl id="exif-data">
+                    <!-- EXIF data wordt hier dynamisch ingevoegd -->
+                </dl>
             </div>
-        </section>
+        </aside>
     </main>
 
     <div id="overlay" class="overlay">

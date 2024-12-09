@@ -34,9 +34,11 @@ const uploadRoutes = require('./routes/upload');
 const albumRoutes = require('./routes/albums');
 const pageRoutes = require('./routes/pages');
 const themeRoutes = require('./routes/themes');
+const photoRoutes = require('./routes/photos');
 
 app.use('/api/auth', authRoutes);
-app.use('/api/photos', uploadRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/photos', photoRoutes);
 app.use('/api/albums', albumRoutes);
 app.use('/api/pages', pageRoutes);
 app.use('/api/themes', themeRoutes);

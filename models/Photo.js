@@ -28,6 +28,18 @@ const photoSchema = new mongoose.Schema({
     size: {
         type: Number,
         required: true
+    },
+    width: {
+        type: Number,
+        required: true
+    },
+    height: {
+        type: Number,
+        required: true
+    },
+    exif: {
+        type: Object,
+        required: false
     }
 }, {
     timestamps: true

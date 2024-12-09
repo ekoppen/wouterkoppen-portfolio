@@ -4,6 +4,7 @@ const Photo = require('../models/Photo');
 const auth = require('../middleware/auth');
 const path = require('path');
 const fs = require('fs').promises;
+const sharp = require('sharp');
 
 // Alle foto's ophalen
 router.get('/', async (req, res) => {
@@ -13,6 +14,46 @@ router.get('/', async (req, res) => {
     } catch (error) {
         console.error('Error fetching photos:', error);
         res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Foto metadata ophalen - moet voor de /:id route komen
+router.get('/:id/metadata', auth, async (req, res) => {
+    try {
+        console.log('Metadata opgevraagd voor foto:', req.params.id);
+        const photo = await Photo.findById(req.params.id);
+        
+        if (!photo) {
+            console.log('Foto niet gevonden:', req.params.id);
+            return res.status(404).json({ error: 'Foto niet gevonden' });
+        }
+
+        console.log('Foto gevonden, metadata:', {
+            width: photo.width,
+            height: photo.height,
+            hasExif: !!photo.exif
+        });
+
+        // Converteer de EXIF data naar een gewoon object als het een Map is
+        let exifData = photo.exif;
+        if (photo.exif instanceof Map) {
+            exifData = Object.fromEntries(photo.exif);
+        }
+
+        // Stuur de metadata terug
+        res.json({
+            width: photo.width,
+            height: photo.height,
+            size: photo.size,
+            format: photo.mimetype.split('/')[1],
+            exif: exifData
+        });
+    } catch (error) {
+        console.error('Error bij ophalen metadata:', error);
+        res.status(500).json({ 
+            error: 'Server error',
+            details: error.message 
+        });
     }
 });
 
