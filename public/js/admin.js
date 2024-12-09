@@ -273,7 +273,7 @@ async function handleFileUpload(files) {
         const newFormData = new FormData();
         Array.from(files).forEach(file => newFormData.append('photos', file));
 
-        const response = await fetch('/api/photos/upload', {
+        const response = await fetch('/api/upload', {
             method: 'POST',
             body: newFormData,
             headers: {
@@ -414,10 +414,10 @@ async function handlePhotoDropOnAlbum(photoId, albumId) {
 
 // Update de render functies om de nieuwe event handlers te gebruiken
 function renderPhotos() {
-    const photosGrid = document.getElementById('photosGrid');
-    if (!photosGrid) return;
+    const container = document.getElementById('photosGrid');
+    if (!container) return;
 
-    photosGrid.innerHTML = '';
+    container.innerHTML = '';
     photos.forEach(photo => {
         const photoCard = document.createElement('div');
         photoCard.className = 'photo-card';
@@ -428,12 +428,11 @@ function renderPhotos() {
             <div class="photo-container">
                 <img src="${photo.path}" alt="${photo.title}" draggable="false">
                 <div class="photo-overlay">
-                    <h3>${photo.title}</h3>
                     <div class="photo-actions">
-                        <button class="btn-edit">
+                        <button class="btn-edit" onclick="handleEditPhoto('${photo._id}')" title="Bewerk foto">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn-delete">
+                        <button class="btn-delete" onclick="handleDeletePhoto('${photo._id}')" title="Verwijder foto">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -445,15 +444,14 @@ function renderPhotos() {
         photoCard.addEventListener('dragstart', handleDragStart);
         photoCard.addEventListener('dragend', handleDragEnd);
 
-        // Event listeners voor de knoppen
-        const editBtn = photoCard.querySelector('.btn-edit');
-        const deleteBtn = photoCard.querySelector('.btn-delete');
+        // Voeg click handler toe voor foto details
+        photoCard.querySelector('img').addEventListener('click', () => {
+            showPhotoDetails(photo);
+        });
 
-        editBtn.addEventListener('click', () => handleEditPhoto(photo._id, photo.title));
-        deleteBtn.addEventListener('click', () => handleDeletePhoto(photo._id));
-
-        photosGrid.appendChild(photoCard);
+        container.appendChild(photoCard);
     });
+    updateItemCounts();
 }
 
 // Albums renderen
@@ -1209,5 +1207,77 @@ function updateItemCounts() {
     const photosCount = document.querySelector('#photos-section .item-count');
     if (photosCount) {
         photosCount.textContent = `(${photos.length})`;
+    }
+} 
+
+// Foto details functies
+async function showPhotoDetails(photo) {
+    const infoSection = document.querySelector('.info-section');
+    infoSection.classList.add('showing-photo');
+
+    // Update basis foto informatie
+    document.getElementById('selected-photo').src = photo.path;
+    document.getElementById('photo-filename').textContent = photo.title || 'Onbekende naam';
+    document.getElementById('photo-type').textContent = photo.mimetype || 'image/jpeg';
+
+    try {
+        // Haal foto metadata op van de server
+        const response = await fetchWithAuth(`/api/photos/${photo._id}/metadata`);
+        if (!response.ok) throw new Error('Fout bij ophalen metadata');
+        
+        const metadata = await response.json();
+        
+        // Update afmetingen
+        document.getElementById('photo-dimensions').textContent = `${metadata.width} × ${metadata.height} pixels`;
+        
+        // Update bestandsgrootte
+        const sizeInMB = (metadata.size / (1024 * 1024)).toFixed(2);
+        document.getElementById('photo-size').textContent = `${sizeInMB} MB`;
+
+        // Update EXIF data
+        const exifContainer = document.getElementById('exif-data');
+        exifContainer.innerHTML = '';
+
+        if (metadata.exif) {
+            const displayNames = {
+                'ImageHeight': 'Hoogte',
+                'ImageWidth': 'Breedte',
+                'ColorComponents': 'Kleurcomponenten',
+                'BitsPerSample': 'Bits per sample',
+                'ResolutionUnit': 'Resolutie eenheid',
+                'XResolution': 'X-Resolutie',
+                'YResolution': 'Y-Resolutie',
+                'FileType': 'Bestandstype',
+                'Subsampling': 'Subsampling',
+                'Make': 'Camera merk',
+                'Model': 'Camera model',
+                'LensModel': 'Lens model',
+                'LensMake': 'Lens merk',
+                'ExposureTime': 'Sluitertijd',
+                'FNumber': 'Diafragma',
+                'ISO': 'ISO',
+                'FocalLength': 'Brandpuntafstand',
+                'DateTimeOriginal': 'Opnamedatum',
+                'GPSLatitude': 'Breedtegraad',
+                'GPSLongitude': 'Lengtegraad'
+            };
+
+            for (const [key, value] of Object.entries(metadata.exif)) {
+                if (value !== null && value !== undefined) {
+                    const dt = document.createElement('dt');
+                    dt.textContent = displayNames[key] || key;
+                    const dd = document.createElement('dd');
+                    dd.textContent = value.toString();
+                    exifContainer.appendChild(dt);
+                    exifContainer.appendChild(dd);
+                }
+            }
+        } else {
+            exifContainer.innerHTML = '<dt>EXIF Data</dt><dd>Geen EXIF data beschikbaar</dd>';
+        }
+
+    } catch (error) {
+        console.error('Fout bij laden foto details:', error);
+        showMessage('Fout bij laden van foto details', 'error');
     }
 } 

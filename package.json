@@ -8,14 +8,23 @@
     "dev": "nodemon server.js"
   },
   "nodemonConfig": {
-    "watch": ["server.js", "routes/", "models/", "middleware/", "public/"],
+    "watch": [
+      "server.js",
+      "routes/",
+      "models/",
+      "middleware/",
+      "public/"
+    ],
     "ext": "js,json,html,css",
-    "ignore": ["public/uploads/*"],
+    "ignore": [
+      "public/uploads/*"
+    ],
     "delay": "2"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.3.1",
+    "exifreader": "^4.25.0",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.0.2",
@@ -24,5 +33,8 @@
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
-  }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
