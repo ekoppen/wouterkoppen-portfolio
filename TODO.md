@@ -32,3 +32,5 @@
 - [ ] Deployment instructies
 - [ ] Security audit
 - [ ] GDPR compliance check 
+- [ ] Download functionaliteit maken zowel voor verkoop als voor bulk download tif bestanden
+- [ ] Zoom en klik functie maken voor de voorpagina

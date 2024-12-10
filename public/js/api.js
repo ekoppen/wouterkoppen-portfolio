@@ -1,6 +1,7 @@
 // API helper functies
 export async function fetchWithAuth(url, options = {}) {
     const token = localStorage.getItem('token');
+    //console.log(token);
     if (!token) {
         window.location.href = '/login.html';
         return;

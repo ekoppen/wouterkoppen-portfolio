@@ -333,28 +333,40 @@ async function handleEditPhoto(photoId, currentFilename) {
     });
 }
 
-async function handleDeletePhoto(photoId) {
-    showConfirmDialog(async (confirmed) => {
-        if (confirmed) {
-            try {
-                await fetch(`/api/photos/${photoId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
+async function handleDeletePhotoFromAlbum(photoId, albumId) {
+    try {
+        const response = await fetchWithAuth(`/api/albums/${albumId}/photos/${photoId}`, {
+            method: 'DELETE'
+        });
 
-                await loadPhotos();
-                showMessage('Foto succesvol verwijderd');
-            } catch (error) {
-                console.error('Error deleting photo:', error);
-                showMessage('Fout bij verwijderen van foto', 'error');
-            }
+        if (!response.ok) {
+            throw new Error('Fout bij verwijderen van foto uit album');
         }
-    }, {
-        message: 'Weet je zeker dat je deze foto wilt verwijderen?',
-        isDangerous: true
-    });
+
+        await loadAlbumPhotos(albumId);
+        showMessage('Foto succesvol verwijderd uit album');
+    } catch (error) {
+        console.error('Error removing photo from album:', error);
+        showMessage('Fout bij verwijderen van foto uit album', 'error');
+    }
+}
+
+async function handleDeletePhoto(photoId) {
+    try {
+        const response = await fetchWithAuth(`/api/photos/${photoId}`, {
+            method: 'DELETE'
+        });
+
+        if (!response.ok) {
+            throw new Error('Fout bij verwijderen van foto');
+        }
+
+        await loadPhotos();
+        showMessage('Foto succesvol verwijderd');
+    } catch (error) {
+        console.error('Error deleting photo:', error);
+        showMessage('Fout bij verwijderen van foto', 'error');
+    }
 }
 
 async function handleEditAlbum(albumId, currentTitle) {
@@ -1334,8 +1346,8 @@ async function showAlbumView(albumId) {
         // Laad foto's
         await loadAlbumPhotos(albumId);
         
-        // Initialiseer drag & drop
-        initializeAlbumDragAndDrop();
+        // Initialiseer drag & drop met albumId
+        initializeAlbumDragAndDrop(albumId);
         
         // Initialiseer thumbnail size control
         initializeAlbumThumbnailControl();
@@ -1354,10 +1366,13 @@ async function loadAlbumPhotos(albumId) {
         const photos = await response.json();
         const grid = document.getElementById('albumPhotosGrid');
         
+        if (!grid) return;
+        
         grid.innerHTML = '';
+        grid.dataset.albumId = albumId;
+        
         photos.forEach(photo => {
-            const photoCard = createPhotoCard(photo);
-            photoCard.dataset.albumId = albumId;
+            const photoCard = createPhotoCard(photo, true); // true voor albumweergave
             grid.appendChild(photoCard);
         });
     } catch (error) {
@@ -1366,46 +1381,87 @@ async function loadAlbumPhotos(albumId) {
     }
 }
 
-function initializeAlbumDragAndDrop() {
+function initializeAlbumDragAndDrop(albumId) {
     const grid = document.getElementById('albumPhotosGrid');
     if (!grid) return;
 
-    const photoCards = grid.querySelectorAll('.photo-card');
+    // Sla het albumId op in het grid element
+    grid.dataset.albumId = albumId;
+
+    // Verwijder bestaande event listeners
+    const clone = grid.cloneNode(true);
+    grid.parentNode.replaceChild(clone, grid);
+    const newGrid = document.getElementById('albumPhotosGrid');
+
+    const photoCards = newGrid.querySelectorAll('.photo-card');
     photoCards.forEach(card => {
         card.setAttribute('draggable', true);
-        card.addEventListener('dragstart', handleDragStart);
-        card.addEventListener('dragend', handleDragEnd);
+        card.addEventListener('dragstart', (e) => {
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        card.addEventListener('dragend', (e) => {
+            e.target.classList.remove('dragging');
+            document.querySelectorAll('.drag-over').forEach(el => {
+                el.classList.remove('drag-over');
+            });
+        });
     });
 
-    grid.addEventListener('dragover', handleDragOver);
-    grid.addEventListener('drop', handleDrop);
-}
-
-async function handleAlbumDrop(e, albumId) {
-    e.preventDefault();
-    
-    const grid = document.getElementById('albumPhotosGrid');
-    const newOrder = Array.from(grid.children).map(card => card.dataset.id);
-    
-    try {
-        const response = await fetchWithAuth(`/api/albums/${albumId}/reorder`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ photoIds: newOrder })
-        });
-
-        if (!response.ok) {
-            throw new Error('Fout bij herordenen van foto\'s');
+    newGrid.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        
+        const draggingCard = newGrid.querySelector('.dragging');
+        const card = e.target.closest('.photo-card');
+        
+        if (draggingCard && card && draggingCard !== card) {
+            const draggingIndex = Array.from(newGrid.children).indexOf(draggingCard);
+            const cardIndex = Array.from(newGrid.children).indexOf(card);
+            
+            // Verwijder bestaande drag-over classes
+            newGrid.querySelectorAll('.drag-over').forEach(el => {
+                if (el !== card) el.classList.remove('drag-over');
+            });
+            
+            card.classList.add('drag-over');
+            
+            if (draggingIndex < cardIndex) {
+                card.parentNode.insertBefore(draggingCard, card.nextSibling);
+            } else {
+                card.parentNode.insertBefore(draggingCard, card);
+            }
         }
+    });
 
-        showMessage('Volgorde succesvol aangepast');
-    } catch (error) {
-        console.error('Error reordering photos:', error);
-        showMessage('Fout bij aanpassen volgorde', 'error');
-        await loadAlbumPhotos(albumId);
-    }
+    newGrid.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        
+        // Verwijder alle drag-over classes
+        newGrid.querySelectorAll('.drag-over').forEach(el => {
+            el.classList.remove('drag-over');
+        });
+        
+        const photoCards = Array.from(newGrid.querySelectorAll('.photo-card'));
+        const newOrder = photoCards.map(card => card.dataset.id);
+        
+        try {
+            const response = await fetchWithAuth(`/api/albums/${albumId}/reorder`, {
+                method: 'PUT',
+                body: JSON.stringify({ photoIds: newOrder })
+            });
+
+            if (!response.ok) {
+                throw new Error('Fout bij herordenen van foto\'s');
+            }
+
+            showMessage('Volgorde succesvol aangepast');
+        } catch (error) {
+            console.error('Error reordering photos:', error);
+            showMessage('Fout bij aanpassen volgorde', 'error');
+            await loadAlbumPhotos(albumId);
+        }
+    });
 }
 
 // Event listeners voor album view
@@ -1462,21 +1518,23 @@ function updateRenderAlbums() {
 document.addEventListener('DOMContentLoaded', updateRenderAlbums);
 
 // Helper functie om een foto kaart te maken
-function createPhotoCard(photo) {
+function createPhotoCard(photo, inAlbumView = false) {
     const photoCard = document.createElement('div');
     photoCard.className = 'photo-card';
     photoCard.draggable = true;
     photoCard.dataset.id = photo._id;
+    
+    const albumId = document.getElementById('albumPhotosGrid')?.dataset.albumId;
     
     photoCard.innerHTML = `
         <div class="photo-container">
             <img src="${photo.path}" alt="${photo.title || 'Geen titel'}" draggable="false">
             <div class="photo-overlay">
                 <div class="photo-actions">
-                    <button class="btn-edit" onclick="handleEditPhoto('${photo._id}', '${photo.title || ''}')" title="Bewerk foto">
+                    <button class="btn-edit" title="Bewerk foto">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn-delete" onclick="handleDeletePhoto('${photo._id}')" title="Verwijder foto">
+                    <button class="btn-delete" title="${inAlbumView ? 'Verwijder foto uit album' : 'Verwijder foto'}">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -1488,8 +1546,72 @@ function createPhotoCard(photo) {
     photoCard.addEventListener('dragstart', handleDragStart);
     photoCard.addEventListener('dragend', handleDragEnd);
 
-    // Voeg click handler toe voor foto details
-    photoCard.querySelector('img').addEventListener('click', () => {
+    // Voeg click handlers toe
+    const editButton = photoCard.querySelector('.btn-edit');
+    const deleteButton = photoCard.querySelector('.btn-delete');
+    const img = photoCard.querySelector('img');
+
+    editButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        showConfirmDialog((confirmed, newTitle) => {
+            if (confirmed && newTitle) {
+                handleEditPhoto(photo._id, newTitle);
+            }
+        }, {
+            message: 'Voer een nieuwe naam in voor de foto:',
+            inputField: true,
+            inputValue: photo.title || '',
+            confirmText: 'Opslaan',
+            isDangerous: false
+        });
+    });
+    
+    if (inAlbumView) {
+        deleteButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showConfirmDialog(async (confirmed) => {
+                if (confirmed) {
+                    try {
+                        const response = await fetchWithAuth(`/api/albums/${albumId}/photos/${photo._id}`, {
+                            method: 'DELETE'
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Fout bij verwijderen van foto uit album');
+                        }
+
+                        await loadAlbumPhotos(albumId);
+                        showMessage('Foto succesvol verwijderd uit album');
+                    } catch (error) {
+                        console.error('Error removing photo from album:', error);
+                        showMessage('Fout bij verwijderen van foto uit album', 'error');
+                    }
+                }
+            }, {
+                message: 'Weet je zeker dat je deze foto uit het album wilt verwijderen?',
+                isDangerous: true
+            });
+        });
+    } else {
+        deleteButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showConfirmDialog(async (confirmed) => {
+                if (confirmed) {
+                    await handleDeletePhoto(photo._id);
+                }
+            }, {
+                message: 'Weet je zeker dat je deze foto wilt verwijderen?',
+                isDangerous: true
+            });
+        });
+    }
+
+    img.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         showPhotoDetails(photo);
     });
 
