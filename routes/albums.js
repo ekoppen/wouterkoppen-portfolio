@@ -5,13 +5,17 @@ const auth = require('../middleware/auth');
 const mongoose = require('mongoose');
 
 // Alle albums ophalen
-router.get('/', auth, async (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        const albums = await Album.find().populate('photos');
+        const albums = await Album.find()
+            .select('title') // Alleen de titels ophalen voor de dock
+            .sort('title')
+            .exec();
+        
         res.json(albums);
     } catch (error) {
         console.error('Error fetching albums:', error);
-        res.status(500).json({ error: 'Fout bij ophalen van albums' });
+        res.status(500).json({ message: 'Server error' });
     }
 });
 
@@ -231,6 +235,24 @@ router.delete('/:id/photos/:photoId', auth, async (req, res) => {
     } catch (error) {
         console.error('Error removing photo from album:', error);
         res.status(500).json({ error: 'Fout bij verwijderen van foto uit album' });
+    }
+});
+
+// Haal album op basis van naam
+router.get('/by-name/:name', async (req, res) => {
+    try {
+        const album = await Album.findOne({ title: req.params.name })
+            .populate('photos')
+            .exec();
+        
+        if (!album) {
+            return res.status(404).json({ message: 'Album niet gevonden' });
+        }
+        
+        res.json(album);
+    } catch (error) {
+        console.error('Error fetching album by name:', error);
+        res.status(500).json({ message: 'Server error' });
     }
 });
 

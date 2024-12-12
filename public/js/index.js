@@ -38,15 +38,19 @@ async function fetchWithAuth(url, options = {}) {
 // Check auth status
 async function checkAuth() {
     const token = localStorage.getItem('token');
-    const authButtons = document.getElementById('authButtons');
+    const menuDropdown = document.getElementById('menuDropdown');
     
     if (token) {
         try {
             const response = await fetchWithAuth('/api/auth/check');
             if (response.ok) {
-                authButtons.innerHTML = `
-                    <a href="/admin" class="nav-link">Admin</a>
-                    <button onclick="logout()" class="nav-btn">Uitloggen</button>
+                menuDropdown.innerHTML = `
+                    <a href="/admin" class="menu-item">
+                        <i class="fas fa-cog"></i>Admin
+                    </a>
+                    <a href="#" class="menu-item" onclick="logout(event)">
+                        <i class="fas fa-sign-out-alt"></i>Uitloggen
+                    </a>
                 `;
                 return;
             }
@@ -61,13 +65,34 @@ async function checkAuth() {
     }
     
     // Niet ingelogd
-    authButtons.innerHTML = `
-        <a href="/login" class="nav-link">Login</a>
+    menuDropdown.innerHTML = `
+        <a href="/login" class="menu-item">
+            <i class="fas fa-sign-in-alt"></i>Login
+        </a>
     `;
 }
 
-// Uitlog functie
-function logout() {
+// Menu toggle functionaliteit
+function setupMenu() {
+    const menuButton = document.getElementById('menuButton');
+    const menuDropdown = document.getElementById('menuDropdown');
+    
+    menuButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menuDropdown.classList.toggle('show');
+    });
+    
+    // Sluit menu bij klik buiten menu
+    document.addEventListener('click', (e) => {
+        if (!menuDropdown.contains(e.target) && !menuButton.contains(e.target)) {
+            menuDropdown.classList.remove('show');
+        }
+    });
+}
+
+// Update de logout functie
+function logout(e) {
+    if (e) e.preventDefault();
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
@@ -82,16 +107,36 @@ const SLIDE_DURATION = 10000; // 10 seconden
 // Foto's laden
 async function loadPhotos() {
     try {
-        const response = await fetch('/api/photos');
-        if (!response.ok) throw new Error('Fout bij ophalen foto\'s');
+        // Haal specifiek het "home" album op
+        const response = await fetch('/api/albums/by-name/home');
+        if (!response.ok) throw new Error('Fout bij ophalen home album');
         
-        photos = await response.json();
+        const album = await response.json();
+        if (!album || !album.photos || album.photos.length === 0) {
+            console.error('Geen foto\'s gevonden in home album');
+            return;
+        }
+        
+        photos = album.photos;
         if (photos.length > 0) {
             showPhoto(0);
             startSlideTimer();
         }
     } catch (error) {
         console.error('Fout bij het laden van foto\'s:', error);
+        // Fallback naar alle foto's als het home album niet bestaat
+        try {
+            const fallbackResponse = await fetch('/api/photos');
+            if (!fallbackResponse.ok) throw new Error('Fout bij ophalen foto\'s');
+            
+            photos = await fallbackResponse.json();
+            if (photos.length > 0) {
+                showPhoto(0);
+                startSlideTimer();
+            }
+        } catch (fallbackError) {
+            console.error('Fout bij laden van fallback foto\'s:', fallbackError);
+        }
     }
 }
 
@@ -289,10 +334,82 @@ function resetSlideTimer() {
     timerBar.style.width = '0%';
 }
 
+// Albums laden en dock vullen
+async function loadAlbums() {
+    try {
+        const response = await fetch('/api/albums');
+        if (!response.ok) throw new Error('Fout bij ophalen albums');
+        
+        const albums = await response.json();
+        const dock = document.querySelector('.album-dock');
+        const currentAlbum = localStorage.getItem('currentAlbum') || 'home';
+        
+        // Filter albums die we willen tonen (bijvoorbeeld niet het admin album)
+        const filteredAlbums = albums.filter(album => album.title !== 'admin');
+        
+        // Sorteer albums met 'home' eerst
+        filteredAlbums.sort((a, b) => {
+            if (a.title === 'home') return -1;
+            if (b.title === 'home') return 1;
+            return a.title.localeCompare(b.title);
+        });
+        
+        // Maak dock items
+        filteredAlbums.forEach(album => {
+            const link = document.createElement('a');
+            link.href = '#';
+            link.className = 'album-dock-item';
+            if (album.title === currentAlbum) {
+                link.classList.add('active');
+            }
+            link.textContent = album.title.charAt(0).toUpperCase() + album.title.slice(1);
+            link.setAttribute('data-album', album.title);
+            
+            link.addEventListener('click', async (e) => {
+                e.preventDefault();
+                await switchAlbum(album.title);
+                
+                // Update actieve status
+                document.querySelectorAll('.album-dock-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                link.classList.add('active');
+            });
+            
+            dock.appendChild(link);
+        });
+    } catch (error) {
+        console.error('Fout bij het laden van albums:', error);
+    }
+}
+
+// Functie om van album te wisselen
+async function switchAlbum(albumName) {
+    try {
+        const response = await fetch(`/api/albums/by-name/${albumName}`);
+        if (!response.ok) throw new Error('Fout bij ophalen album');
+        
+        const album = await response.json();
+        if (!album || !album.photos || album.photos.length === 0) {
+            console.error('Geen foto\'s gevonden in album');
+            return;
+        }
+        
+        // Update globale photos array en start nieuwe slideshow
+        photos = album.photos;
+        localStorage.setItem('currentAlbum', albumName);
+        showPhoto(0);
+        startSlideTimer();
+    } catch (error) {
+        console.error('Fout bij wisselen van album:', error);
+    }
+}
+
 // Initialisatie
 document.addEventListener('DOMContentLoaded', () => {
     setupImageProtection();
     setupAdvancedProtection();
+    setupMenu();
     
     // Voorkom dat de pagina in cache wordt opgeslagen
     window.onunload = () => {};
@@ -344,8 +461,9 @@ document.addEventListener('DOMContentLoaded', () => {
         element.addEventListener('mouseleave', startSlideTimer);
     });
 
-    // Start met auth check en laden van foto's
+    // Start met auth check en laden van albums/foto's
     checkAuth();
+    loadAlbums();
     loadPhotos();
 });
 

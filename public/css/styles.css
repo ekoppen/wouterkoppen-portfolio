@@ -272,7 +272,7 @@ body {
     width: 0%;
     transition: width 0.1s linear, background-color 0.3s ease;
     z-index: 10;
-    opacity: 0.7;
+    opacity: 0.2;
 }
 
 /* Navigatie styling */
@@ -321,6 +321,154 @@ nav {
     border: none;
     cursor: pointer;
     font-family: inherit;
+}
+
+/* Album Dock */
+.album-dock {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    display: flex;
+    gap: 10px;
+    padding: 10px 20px;
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    z-index: 100;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Toon dock bij hover over het onderste deel van het scherm */
+.carousel-container:hover ~ .album-dock,
+.dock-trigger:hover ~ .album-dock,
+.album-dock:hover {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: all;
+}
+
+.album-dock-item {
+    color: var(--adaptive-text-color);
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    position: relative;
+    opacity: 0.7;
+}
+
+.album-dock-item:hover {
+    opacity: 1;
+    transform: translateY(-5px) scale(1.1);
+}
+
+.album-dock-item.active {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Hover zone voor dock */
+.dock-trigger {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 150px;
+    z-index: 99;
+}
+
+/* Dock reflection effect */
+.album-dock::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    right: 0;
+    height: 10px;
+    background: linear-gradient(to bottom, 
+        rgba(255, 255, 255, 0.1),
+        transparent);
+    filter: blur(2px);
+    border-radius: 50%;
+}
+
+/* Menu styling */
+.menu-button {
+    background: transparent;
+    border: none;
+    color: var(--adaptive-text-color);
+    font-size: 1.2rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu-button:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.menu-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 1rem;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    padding: 0.5rem;
+    display: none;
+    min-width: 150px;
+    z-index: 1000;
+}
+
+.menu-dropdown.show {
+    display: block;
+    animation: menuFadeIn 0.2s ease;
+}
+
+.menu-item {
+    display: block;
+    color: var(--adaptive-text-color);
+    text-decoration: none;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.menu-item:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.menu-item i {
+    margin-right: 0.5rem;
+    width: 20px;
+    text-align: center;
+}
+
+@keyframes menuFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Rest van de bestaande styling blijft hetzelfde */

@@ -11,13 +11,17 @@
     <meta http-equiv="Expires" content="0">
     <title>Wouter Koppen Fotografie</title>
     <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
     <nav>
         <div class="logo">Wouter Koppen</div>
         <div class="nav-right">
-            <div id="authButtons">
-                <!-- Auth buttons worden hier dynamisch toegevoegd -->
+            <button id="menuButton" class="menu-button">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+            <div id="menuDropdown" class="menu-dropdown">
+                <!-- Menu items worden hier dynamisch toegevoegd -->
             </div>
         </div>
     </nav>
@@ -37,6 +41,11 @@
 
         <div class="timer-bar"></div>
     </main>
+
+    <div class="dock-trigger"></div>
+    <div class="album-dock">
+        <!-- Albums worden hier dynamisch toegevoegd -->
+    </div>
 
     <script src="/js/index.js"></script>
 </body>
