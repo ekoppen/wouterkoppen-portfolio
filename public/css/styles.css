@@ -55,6 +55,8 @@
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    
+    --adaptive-text-color: #ffffff; /* Standaard wit, wordt dynamisch aangepast */
 }
 
 /* Algemene styling */
@@ -104,4 +106,222 @@ body {
     font-size: 0.9em;
 }
 
+/* Foto transitie effecten */
+.photo-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transform: scale(1);
+    filter: blur(15px);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    pointer-events: none;
+}
+
+.photo-slide.active {
+    opacity: 1;
+    animation: focus-effect 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.photo-slide.previous {
+    opacity: 0;
+    transform: scale(1);
+    filter: blur(15px);
+    transition: opacity 0.3s ease-out;
+}
+
+@keyframes focus-effect {
+    0% {
+        filter: blur(15px);
+    }
+    100% {
+        filter: blur(0);
+    }
+}
+
+/* Zorg dat de container relative positioning heeft */
+.photo-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Overlay voor extra bescherming */
+.photo-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 2px,
+        rgba(255, 255, 255, 0.02) 2px,
+        rgba(255, 255, 255, 0.02) 4px
+    );
+    pointer-events: none;
+    z-index: 4;
+    mix-blend-mode: overlay;
+}
+
+/* Watermark overlay */
+.photo-container::before {
+    content: 'Wouter Koppen';
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    font-size: 3vw;
+    color: rgba(255, 255, 255, 0.15);
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 5;
+    text-transform: uppercase;
+    letter-spacing: 1vw;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Segmentatie overlay */
+.photo-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: repeating-linear-gradient(
+        to right,
+        transparent 0%,
+        transparent 49.9%,
+        rgba(255, 255, 255, 0.01) 50%,
+        transparent 50.1%,
+        transparent 100%
+    );
+    background-size: 100px 100%;
+    pointer-events: none;
+    z-index: 3;
+    mix-blend-mode: overlay;
+}
+
+/* Carousel container en navigatie */
+.carousel-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: black;
+    z-index: -1;
+    overflow: hidden;
+}
+
+.carousel-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    color: var(--adaptive-text-color);
+    border: none;
+    padding: 1rem;
+    cursor: pointer;
+    font-size: 1.5rem;
+    opacity: 0;
+    transition: opacity 0.3s ease, color 0.3s ease;
+    z-index: 10;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.carousel-container:hover .carousel-button {
+    opacity: 0.7;
+}
+
+.carousel-button:hover {
+    opacity: 1 !important;
+}
+
+.carousel-button.prev {
+    left: 1rem;
+}
+
+.carousel-button.next {
+    right: 1rem;
+}
+
+/* Foto informatie */
+.photo-info {
+    display: none; /* Verberg de foto informatie */
+}
+
+/* Timer bar */
+.timer-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: var(--adaptive-text-color);
+    width: 0%;
+    transition: width 0.1s linear, background-color 0.3s ease;
+    z-index: 10;
+    opacity: 0.7;
+}
+
+/* Navigatie styling */
+nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 100%);
+}
+
+.logo {
+    color: var(--adaptive-text-color);
+    font-size: 1.2rem;
+    letter-spacing: 0.05em;
+    transition: color 0.3s ease;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.nav-right {
+    display: flex;
+    gap: 1rem;
+}
+
+.nav-link, .nav-btn {
+    color: var(--adaptive-text-color);
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    font-size: 0.9rem;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.nav-link:hover, .nav-btn:hover {
+    background: rgba(128, 128, 128, 0.2);
+}
+
+.nav-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+/* Rest van de bestaande styling blijft hetzelfde */
 [... rest of the original file remains exactly the same ...] 

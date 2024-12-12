@@ -3,8 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, noarchive">
+    <meta name="googlebot" content="noindex, noarchive">
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, proxy-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Wouter Koppen Fotografie</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
     <nav>
@@ -17,8 +23,8 @@
     </nav>
 
     <main class="carousel-container">
-        <div class="carousel">
-            <!-- Foto wordt hier dynamisch geladen -->
+        <div class="photo-container">
+            <!-- Foto's worden hier dynamisch toegevoegd -->
         </div>
         <button class="carousel-button prev" aria-label="Vorige foto">&#10094;</button>
         <button class="carousel-button next" aria-label="Volgende foto">&#10095;</button>
@@ -32,277 +38,6 @@
         <div class="timer-bar"></div>
     </main>
 
-    <script>
-        // Helper functie voor API requests met auth
-        async function fetchWithAuth(url, options = {}) {
-            const token = localStorage.getItem('token');
-            const defaultOptions = token ? {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            } : {};
-
-            return fetch(url, { ...defaultOptions, ...options });
-        }
-
-        // Check auth status
-        async function checkAuth() {
-            const token = localStorage.getItem('token');
-            const authButtons = document.getElementById('authButtons');
-            
-            if (token) {
-                try {
-                    const response = await fetchWithAuth('/api/auth/check');
-                    if (response.ok) {
-                        authButtons.innerHTML = `
-                            <a href="/admin" class="nav-link">Admin</a>
-                            <button onclick="logout()" class="nav-btn">Uitloggen</button>
-                        `;
-                        return;
-                    }
-                } catch (error) {
-                    console.error('Auth check error:', error);
-                }
-                
-                // Als we hier komen is de token ongeldig
-                localStorage.removeItem('token');
-                localStorage.removeItem('refreshToken');
-                localStorage.removeItem('user');
-            }
-            
-            // Niet ingelogd
-            authButtons.innerHTML = `
-                <a href="/login" class="nav-link">Login</a>
-            `;
-        }
-
-        let currentPhotoIndex = 0;
-        let photos = [];
-        let slideTimer;
-        const SLIDE_DURATION = 10000; // 10 seconden
-
-        // Foto's laden
-        async function loadPhotos() {
-            try {
-                const response = await fetch('/api/photos');
-                if (!response.ok) throw new Error('Fout bij ophalen foto\'s');
-                
-                photos = await response.json();
-                if (photos.length > 0) {
-                    showPhoto(0);
-                    startSlideTimer();
-                }
-            } catch (error) {
-                console.error('Fout bij het laden van foto\'s:', error);
-            }
-        }
-
-        function showPhoto(index) {
-            if (photos.length === 0) return;
-            
-            currentPhotoIndex = (index + photos.length) % photos.length;
-            const photo = photos[currentPhotoIndex];
-            const carousel = document.querySelector('.carousel');
-            
-            // Update carousel met nieuwe foto
-            carousel.style.backgroundImage = `url(${photo.path})`;
-            
-            // Update foto informatie
-            document.querySelector('.photo-title').textContent = photo.title || '';
-            document.querySelector('.photo-description').textContent = photo.description || '';
-            document.querySelector('.photo-category').textContent = photo.category || '';
-
-            // Reset en start timer
-            resetSlideTimer();
-            startSlideTimer();
-        }
-
-        function startSlideTimer() {
-            if (slideTimer) clearInterval(slideTimer);
-            
-            let startTime = Date.now();
-            const timerBar = document.querySelector('.timer-bar');
-            timerBar.style.width = '0%';
-
-            slideTimer = setInterval(() => {
-                const elapsed = Date.now() - startTime;
-                const progress = (elapsed / SLIDE_DURATION) * 100;
-                
-                if (progress >= 100) {
-                    showPhoto(currentPhotoIndex + 1);
-                } else {
-                    timerBar.style.width = `${progress}%`;
-                }
-            }, 50);
-        }
-
-        function resetSlideTimer() {
-            if (slideTimer) clearInterval(slideTimer);
-            const timerBar = document.querySelector('.timer-bar');
-            timerBar.style.width = '0%';
-        }
-
-        // Event listeners voor navigatie
-        document.querySelector('.next').addEventListener('click', () => {
-            showPhoto(currentPhotoIndex + 1);
-        });
-
-        document.querySelector('.prev').addEventListener('click', () => {
-            showPhoto(currentPhotoIndex - 1);
-        });
-
-        // Keyboard navigatie
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowRight') {
-                showPhoto(currentPhotoIndex + 1);
-            }
-            if (e.key === 'ArrowLeft') {
-                showPhoto(currentPhotoIndex - 1);
-            }
-        });
-
-        // Touch swipe ondersteuning
-        let touchStartX = 0;
-        const carousel = document.querySelector('.carousel');
-
-        carousel.addEventListener('touchstart', (e) => {
-            touchStartX = e.touches[0].clientX;
-            resetSlideTimer();
-        });
-
-        carousel.addEventListener('touchend', (e) => {
-            const touchEndX = e.changedTouches[0].clientX;
-            const diff = touchStartX - touchEndX;
-
-            if (Math.abs(diff) > 50) { // Minimale swipe afstand
-                if (diff > 0) {
-                    showPhoto(currentPhotoIndex + 1);
-                } else {
-                    showPhoto(currentPhotoIndex - 1);
-                }
-            }
-        });
-
-        // Pauzeer timer bij hover over navigatie elementen
-        document.querySelectorAll('.carousel-button, .photo-info').forEach(element => {
-            element.addEventListener('mouseenter', resetSlideTimer);
-            element.addEventListener('mouseleave', startSlideTimer);
-        });
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            checkAuth();
-            loadPhotos();
-        });
-    </script>
-
-    <style>
-        .carousel-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: black;
-            z-index: -1;
-        }
-
-        .carousel {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-size: cover;
-            background-position: center;
-            transition: background-image 0.5s ease-in-out;
-        }
-
-        .carousel-button {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.5);
-            color: white;
-            border: none;
-            padding: 1rem;
-            cursor: pointer;
-            font-size: 1.5rem;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .carousel-container:hover .carousel-button {
-            opacity: 1;
-        }
-
-        .prev {
-            left: 1rem;
-        }
-
-        .next {
-            right: 1rem;
-        }
-
-        .photo-info {
-            position: absolute;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            color: white;
-            text-align: center;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 1rem;
-            border-radius: 4px;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .carousel-container:hover .photo-info {
-            opacity: 1;
-        }
-
-        .timer-bar {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            height: 2px;
-            background: white;
-            width: 0%;
-            transition: width 0.1s linear;
-        }
-
-        nav {
-            position: relative;
-            z-index: 1;
-            background: transparent;
-        }
-
-        .nav-link, .nav-btn {
-            color: white;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            transition: background-color 0.3s ease;
-        }
-
-        .nav-link:hover, .nav-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .nav-btn {
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-            font-family: inherit;
-            font-size: inherit;
-        }
-
-        .logo {
-            color: white;
-        }
-    </style>
+    <script src="/js/index.js"></script>
 </body>
 </html> 
