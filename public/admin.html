@@ -4,9 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Wouter Koppen</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Droid+Sans+Mono&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/admin.css">
+    <style>
+        /* Font styling */
+        body {
+            font-family: 'Droid Sans Mono', monospace;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -29,7 +36,7 @@
         <div class="sections-container">
             <section id="pages-section" class="section-collapsible">
                 <div class="section-header">
-                    <h2>Pagina's <span class="item-count">0</span></h2>
+                    <h1>Pagina's <span class="item-count">0</span></h1>
                     <div class="section-actions">
                         <button class="btn-primary" data-action="createPage" title="Nieuwe Pagina">
                             <i class="fas fa-plus"></i>
@@ -46,7 +53,7 @@
 
             <section id="albums-section" class="section-collapsible">
                 <div class="section-header">
-                    <h2>Albums <span class="item-count">0</span></h2>
+                    <h1>Albums <span class="item-count">0</span></h1>
                     <div class="section-actions">
                         <button class="btn-primary" data-action="createAlbum" title="Nieuw Album">
                             <i class="fas fa-plus"></i>
@@ -93,7 +100,7 @@
 
             <section id="photos-section" class="section-collapsible">
                 <div class="section-header">
-                    <h2>Foto's <span class="item-count">0</span></h2>
+                    <h1>Foto's <span class="item-count">0</span></h1>
                     <div class="section-actions">
                         <button class="btn-primary" data-action="openUploadDialog" title="Upload Foto's">
                             <i class="fas fa-upload"></i>
@@ -124,7 +131,7 @@
 
         <aside class="info-section">
             <div class="album-details" style="display: none;">
-                <h2>Album Details</h2>
+                <h1>Album Details</h1>
                 <div class="editable-field">
                     <label>Titel</label>
                     <div class="edit-container">
@@ -155,12 +162,12 @@
                 </div>
                 <div class="album-actions">
                     <button class="btn-danger" onclick="handleDeleteAlbum(currentAlbumId)" title="Verwijder album">
-                        <i class="fas fa-trash"></i> Verwijder Album
+                        <i class="fas fa-trash"></i>
                     </button>
                 </div>
             </div>
             <div class="photo-details" style="display: none;">
-                <h2>Foto Details</h2>
+                <h1>Foto Details</h1>
                 <img id="selected-photo" src="" alt="Geselecteerde foto">
                 <h3>Bestandsinformatie</h3>
                 <dl id="photo-info">

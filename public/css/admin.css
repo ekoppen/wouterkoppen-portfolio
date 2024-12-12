@@ -605,6 +605,9 @@ section {
     padding: var(--spacing-xs) var(--spacing-lg);
     background: var(--bg-surface);
     border: none;
+    height: 50px;
+    margin-top: -10px;
+    margin-left: -20px;
 }
 
 .album-card .album-title {
@@ -620,25 +623,25 @@ section {
 }
 
 .album-card .photo-count {
-    margin: var(--spacing-xs) 0 0 0;
+    margin: -5px 0 0 0;
     font-size: 0.85rem;
     color: var(--text-secondary);
-    line-height: 1.2;
+    line-height: 1.0;
 }
 
 .album-card .album-actions {
     display: flex;
     gap: var(--spacing-xs);
-    margin-left: var(--spacing-sm);
+    margin-right: -35px;
     align-items: flex-start;
     border: none;
-    margin-top: -4px;
+    margin-top: -30px;
 }
 
 .album-card .album-actions .btn-icon {
     padding: 0;
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;

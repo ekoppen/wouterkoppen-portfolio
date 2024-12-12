@@ -489,11 +489,8 @@ function renderAlbums() {
                 <p class="photo-count">${album.photos ? album.photos.length : 0} foto's</p>
             </div>
             <div class="album-actions">
-                <button class="btn-icon" onclick="handleEditAlbum('${album._id}', '${album.title}')" title="Album bewerken">
+                <button class="btn-icon" onclick="window.location.href='/album.html?id=${album._id}'" title="Album bewerken">
                     <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn-icon" onclick="handleDeleteAlbum('${album._id}')" title="Album verwijderen">
-                    <i class="fas fa-trash"></i>
                 </button>
             </div>
         `;
@@ -539,7 +536,7 @@ function renderAlbums() {
         albumCard.addEventListener('click', (e) => {
             // Voorkom dat clicks op knoppen het album openen
             if (!e.target.closest('.btn-icon')) {
-                showAlbumView(album._id);
+                showAlbumDetails(album);
             }
         });
 
