@@ -481,45 +481,69 @@ async function handlePhotoDropOnAlbum(photoId, albumId) {
     }
 }
 
+// Helper functie voor het renderen van de lijst weergave
+function renderListView(sortedPhotos) {
+    const listBody = document.getElementById('photosListBody');
+    if (!listBody) return;
+
+    listBody.innerHTML = '';
+    
+    sortedPhotos.forEach(photo => {
+        const row = document.createElement('tr');
+        row.dataset.id = photo._id;
+        
+        // Bereken in welke albums deze foto zit
+        const photoAlbums = albums.filter(album => 
+            album.photos.some(p => p._id === photo._id)
+        );
+        
+        row.innerHTML = `
+            <td class="filename-cell">
+                <div class="list-photo-preview">
+                    <img src="${photo.thumbPath || photo.path}" alt="${photo.filename}">
+                    <span>${photo.filename}</span>
+                </div>
+            </td>
+            <td class="type-cell">${photo.mimetype ? photo.mimetype.split('/')[1].toUpperCase() : '-'}</td>
+            <td class="date-cell">${photo.uploadDate ? new Date(photo.uploadDate).toLocaleDateString() : '-'}</td>
+            <td class="album-cell">
+                ${photoAlbums.map(album => `
+                    <span class="album-tag">${album.title}</span>
+                `).join('')}
+            </td>
+            <td class="actions-cell">
+                <button class="btn-icon" onclick="handleEditPhoto('${photo._id}')" title="Bewerk foto">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-icon btn-danger" onclick="handleDeletePhoto('${photo._id}')" title="Verwijder foto">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        
+        listBody.appendChild(row);
+    });
+}
+
 // Update de render functies om de nieuwe event handlers te gebruiken
 function renderPhotos() {
     const container = document.getElementById('photosGrid');
     if (!container) return;
 
+    const sortedPhotos = getSortedPhotos();
+
+    // Render grid view
     container.innerHTML = '';
-    photos.forEach(photo => {
-        const photoCard = document.createElement('div');
-        photoCard.className = 'photo-card';
-        photoCard.draggable = true;
-        photoCard.dataset.id = photo._id;
-        
-        photoCard.innerHTML = `
-            <div class="photo-container">
-                <img src="${photo.path}" alt="${photo.title}" draggable="false">
-                <div class="photo-overlay">
-                    <div class="photo-actions">
-                        <button class="btn-edit" onclick="handleEditPhoto('${photo._id}')" title="Bewerk foto">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn-delete" onclick="handleDeletePhoto('${photo._id}')" title="Verwijder foto">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        // Event listeners voor drag & drop
-        photoCard.addEventListener('dragstart', handleDragStart);
-        photoCard.addEventListener('dragend', handleDragEnd);
-
-        // Voeg click handler toe voor foto details
-        photoCard.querySelector('img').addEventListener('click', () => {
-            showPhotoDetails(photo);
-        });
-
+    sortedPhotos.forEach(photo => {
+        const photoCard = createPhotoCard(photo);
         container.appendChild(photoCard);
     });
+
+    // Render list view als die actief is
+    if (currentView === 'list') {
+        renderListView(sortedPhotos);
+    }
+
     updateItemCounts();
 }
 
@@ -558,22 +582,14 @@ function renderAlbums() {
             // Neem de eerste 8 foto's
             const previewPhotos = album.photos.slice(0, 8);
             
-            // Laad de eerste foto om de gemiddelde kleur te bepalen
-            const firstPhoto = new Image();
-            firstPhoto.crossOrigin = "Anonymous";  // Nodig voor canvas operaties
-            firstPhoto.src = previewPhotos[0].path;
-            firstPhoto.onload = () => {
-                const avgColor = getAverageColor(firstPhoto);
-                albumPreview.style.backgroundColor = `rgba(${avgColor.r}, ${avgColor.g}, ${avgColor.b}, 0.2)`;
-            };
-            
             previewPhotos.forEach(photo => {
                 const previewContainer = document.createElement('div');
                 previewContainer.className = 'preview-photo';
                 
                 const img = document.createElement('img');
-                img.src = photo.thumbPath || photo.path;
+                img.src = photo.path;
                 img.alt = photo.title || 'Preview';
+                img.loading = 'lazy';  // Lazy loading voor betere performance
                 
                 previewContainer.appendChild(img);
                 albumPreview.appendChild(previewContainer);
@@ -1843,4 +1859,123 @@ function startEditingAlbumDescription() {
     
     // Pas initiële hoogte aan
     autoGrowTextarea(textarea);
+}
+
+// View toggle en sortering
+let currentView = localStorage.getItem('photos_view') || 'grid';
+let currentSort = JSON.parse(localStorage.getItem('photos_sort')) || { field: 'date', direction: 'desc' };
+
+function setupViewControls() {
+    const container = document.querySelector('.photos-container');
+    const viewToggles = document.querySelectorAll('.view-toggle');
+    
+    // Zet initiële weergave
+    container.className = `photos-container ${currentView}-view`;
+    viewToggles.forEach(toggle => {
+        if (toggle.dataset.view === currentView) {
+            toggle.classList.add('active');
+        }
+    });
+    
+    viewToggles.forEach(toggle => {
+        toggle.addEventListener('click', () => {
+            const view = toggle.dataset.view;
+            
+            // Update active state
+            viewToggles.forEach(t => t.classList.remove('active'));
+            toggle.classList.add('active');
+            
+            // Update container class
+            container.className = `photos-container ${view}-view`;
+            currentView = view;
+            
+            // Sla weergavevoorkeur op
+            localStorage.setItem('photos_view', view);
+            
+            // Re-render photos in current view
+            renderPhotos();
+        });
+    });
+    
+    // Setup sorting
+    const sortHeaders = document.querySelectorAll('.photos-list th[data-sort]');
+    
+    // Zet initiële sortering
+    if (currentSort.field) {
+        const currentHeader = Array.from(sortHeaders).find(h => h.dataset.sort === currentSort.field);
+        if (currentHeader) {
+            currentHeader.classList.add(`sorted-${currentSort.direction}`);
+        }
+    }
+    
+    sortHeaders.forEach(header => {
+        header.addEventListener('click', () => {
+            const field = header.dataset.sort;
+            
+            // Toggle direction if same field
+            if (currentSort.field === field) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.field = field;
+                currentSort.direction = 'asc';
+            }
+            
+            // Update header classes
+            sortHeaders.forEach(h => {
+                h.classList.remove('sorted-asc', 'sorted-desc');
+            });
+            header.classList.add(`sorted-${currentSort.direction}`);
+            
+            // Sla sorteervoorkeur op
+            localStorage.setItem('photos_sort', JSON.stringify(currentSort));
+            
+            // Re-render with new sort
+            renderPhotos();
+        });
+    });
+}
+
+// Update de initialisatie
+document.addEventListener('DOMContentLoaded', () => {
+    setupViewControls();
+    // Rest van de bestaande initialisatie code...
+});
+
+// Helper functie voor het sorteren van foto's
+function getSortedPhotos() {
+    if (!currentSort || !currentSort.field) {
+        return photos;
+    }
+
+    return [...photos].sort((a, b) => {
+        let valueA, valueB;
+
+        switch (currentSort.field) {
+            case 'filename':
+                valueA = a.filename.toLowerCase();
+                valueB = b.filename.toLowerCase();
+                break;
+            case 'type':
+                valueA = (a.mimetype || '').toLowerCase();
+                valueB = (b.mimetype || '').toLowerCase();
+                break;
+            case 'date':
+                valueA = new Date(a.uploadDate || 0);
+                valueB = new Date(b.uploadDate || 0);
+                break;
+            case 'album':
+                // Tel in hoeveel albums deze foto voorkomt
+                valueA = albums.filter(album => album.photos.some(p => p._id === a._id)).length;
+                valueB = albums.filter(album => album.photos.some(p => p._id === b._id)).length;
+                break;
+            default:
+                return 0;
+        }
+
+        const modifier = currentSort.direction === 'asc' ? 1 : -1;
+        
+        if (valueA < valueB) return -1 * modifier;
+        if (valueA > valueB) return 1 * modifier;
+        return 0;
+    });
 }

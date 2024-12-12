@@ -298,19 +298,21 @@ main {
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
-.photo-container {
+.photo-card .photo-container {
     position: relative;
-    padding-bottom: 100%;
+    width: 100%;
+    aspect-ratio: 1;
     overflow: hidden;
+    border-radius: var(--radius-sm);
+    background: var(--bg-surface);
 }
 
-.photo-container img {
-    position: absolute;
-    top: 0;
-    left: 0;
+.photo-card .photo-container img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center;
+    transition: transform 0.3s ease;
 }
 
 .photo-overlay {
@@ -390,8 +392,8 @@ section {
 
 .section-actions {
     display: flex;
+    gap: 0.5rem;
     align-items: center;
-    gap: 8px;
 }
 
 .section-actions button {
@@ -558,16 +560,18 @@ section {
 .thumbnail-control {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-left: auto;
-}
-
-.thumbnail-control i {
-    color: #666;
+    gap: 0.5rem;
+    padding: 0 0.5rem;
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
 }
 
 .thumbnail-control input[type="range"] {
     width: 100px;
+}
+
+.thumbnail-control i {
+    color: #666;
 }
 
 .thumbnail-control span {
@@ -687,6 +691,8 @@ section {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center;
+    background: var(--bg-surface);
     border-radius: 2px;
 }
 
@@ -1169,6 +1175,8 @@ section {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center;
+    background: var(--bg-surface);
     display: block;
 }
 
@@ -1286,6 +1294,7 @@ section {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center;
     display: block;
 }
 
@@ -1463,4 +1472,194 @@ section {
 .btn-save i {
     font-size: 1rem;
 }
+
+/* View toggle buttons */
+.view-controls {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+    margin-right: 0.5rem;
+}
+
+.view-toggle {
+    background: var(--bg-surface);
+    border: none;
+    padding: 0.5rem;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+}
+
+.view-toggle:hover {
+    background: var(--bg-surface-hover);
+    color: var(--text-primary);
+}
+
+.view-toggle.active {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+}
+
+/* List view styling */
+.photos-list {
+    width: 100%;
+    border-spacing: 0;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.photos-list thead th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    cursor: pointer;
+    user-select: none;
+}
+
+.photos-list thead th:hover {
+    background: var(--bg-surface-hover);
+}
+
+.photos-list thead th.sorted-asc::after {
+    content: ' ↑';
+    opacity: 0.5;
+}
+
+.photos-list thead th.sorted-desc::after {
+    content: ' ↓';
+    opacity: 0.5;
+}
+
+.photos-list tbody tr {
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.2s ease;
+}
+
+.photos-list tbody tr:hover {
+    background: var(--bg-surface-hover);
+}
+
+.photos-list td {
+    padding: 0.5rem 1rem;
+    color: var(--text-primary);
+}
+
+.photos-list .thumbnail-cell {
+    width: 60px;
+    padding-right: 0;
+}
+
+.photos-list .filename-cell {
+    min-width: 300px;
+}
+
+.photos-list .type-cell {
+    width: 80px;
+}
+
+.photos-list .date-cell {
+    width: 120px;
+}
+
+.photos-list .album-cell {
+    width: auto;
+}
+
+.photos-list .actions-cell {
+    width: 100px;
+    text-align: right;
+}
+
+/* Foto preview in lijst */
+.list-photo-preview {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.list-photo-preview img {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.list-photo-preview span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Album tags */
+.album-tag {
+    display: inline-block;
+    background: var(--color-background-alt);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.9em;
+    margin: 0.1rem;
+}
+
+/* Sorteer indicators */
+.photos-list th.sorted-asc::after {
+    content: ' ↑';
+    opacity: 0.5;
+    margin-left: 0.25rem;
+}
+
+.photos-list th.sorted-desc::after {
+    content: ' ↓';
+    opacity: 0.5;
+    margin-left: 0.25rem;
+}
+
+/* Hover effecten */
+.photos-list th:hover {
+    background-color: var(--color-background-hover);
+}
+
+.photos-list tbody tr:hover td {
+    background-color: var(--color-background-hover);
+}
+
+/* Grid/List container */
+.photos-container {
+    position: relative;
+    width: 100%;
+}
+
+.photos-container.grid-view .photos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(var(--thumbnail-size, 200px), 1fr));
+    gap: 1rem;
+}
+
+.photos-container.grid-view .photos-list {
+    display: none;
+}
+
+.photos-container.list-view .photos-grid {
+    display: none !important;
+}
+
+.photos-container.list-view .photos-list {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* Lijst weergave styling */
  

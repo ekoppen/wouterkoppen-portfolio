@@ -8,7 +8,7 @@ const mongoose = require('mongoose');
 router.get('/', async (req, res) => {
     try {
         const albums = await Album.find()
-            .select('title') // Alleen de titels ophalen voor de dock
+            .populate('photos')  // Voeg photos toe voor previews
             .sort('title')
             .exec();
         

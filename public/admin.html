@@ -102,29 +102,47 @@
                 <div class="section-header">
                     <h1>Foto's <span class="item-count">0</span></h1>
                     <div class="section-actions">
-                        <button class="btn-primary" data-action="openUploadDialog" title="Upload Foto's">
-                            <i class="fas fa-upload"></i>
-                        </button>
-                        <button class="btn-secondary" data-action="toggleSelectMode" title="Selecteer Meerdere">
-                            <i class="fas fa-check-square"></i>
-                        </button>
-                        <button class="btn-danger" data-action="deleteSelectedPhotos" style="display: none;" title="Verwijder Geselecteerde">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                        <button class="btn-secondary" data-action="deselectAll" style="display: none;" title="Deselecteer Alles">
-                            <i class="fas fa-times"></i>
-                        </button>
+                        <div class="view-controls">
+                            <button class="view-toggle active" data-view="grid" title="Grid weergave">
+                                <i class="fas fa-th"></i>
+                            </button>
+                            <button class="view-toggle" data-view="list" title="Lijst weergave">
+                                <i class="fas fa-list"></i>
+                            </button>
+                        </div>
                         <div class="thumbnail-control">
                             <i class="fas fa-image" title="Thumbnail grootte"></i>
                             <input type="range" id="thumbnailSize" min="100" max="400" step="50" value="200" title="Pas thumbnail grootte aan">
                         </div>
+                        <button class="btn-primary" onclick="showUploadDialog()" title="Upload foto's">
+                            <i class="fas fa-upload"></i>
+                        </button>
                         <button class="btn-collapse" data-section="photos-section">
                             <i class="fas fa-chevron-down"></i>
                         </button>
                     </div>
                 </div>
                 <div class="section-content">
-                    <div id="photosGrid" class="photos-grid"></div>
+                    <div class="photos-container grid-view">
+                        <div id="photosGrid" class="photos-grid">
+                            <!-- Foto's worden hier dynamisch toegevoegd in grid view -->
+                        </div>
+                        
+                        <table class="photos-list">
+                            <thead>
+                                <tr>
+                                    <th class="filename-cell" data-sort="filename">Bestandsnaam</th>
+                                    <th class="type-cell" data-sort="type">Type</th>
+                                    <th class="date-cell" data-sort="date">Geüpload</th>
+                                    <th class="album-cell" data-sort="album">Album</th>
+                                    <th class="actions-cell"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="photosListBody">
+                                <!-- Foto's worden hier dynamisch toegevoegd in list view -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
         </div>

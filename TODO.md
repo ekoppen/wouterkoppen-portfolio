@@ -18,8 +18,7 @@
 ## Nog te doen
 - [ ] Albums toevoegen aan pagina's via drag & drop
 - [ ] Albums herordenen binnen pagina's
-- [ ] Frontend voor bezoekers
-- [ ] Lightbox voor foto weergave
+
 - [ ] SEO optimalisatie
 - [ ] Performance optimalisatie (lazy loading, caching)
 - [ ] Backup functionaliteit
@@ -33,4 +32,9 @@
 - [ ] Security audit
 - [ ] GDPR compliance check 
 - [ ] Download functionaliteit maken zowel voor verkoop als voor bulk download tif bestanden
-- [ ] Zoom en klik functie maken voor de voorpagina
+- [x] Zoom en klik functie maken voor de voorpagina
+- [x] Selecteer meerdere foto's
+- [x] Verwijder geselecteerde foto's
+- [ ] Deselecteer alle foto's
+- [ ] Selecteren van foto's voor download
+- [ ] Downloaden van geselecteerde foto's
