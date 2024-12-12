@@ -254,6 +254,9 @@ async function handleDrop(e) {
             throw new Error('Fout bij herordenen van foto\'s');
         }
 
+        // Sla op dat er wijzigingen zijn gemaakt
+        localStorage.setItem('album_order_changed', albumId);
+
         showMessage('Volgorde succesvol aangepast');
     } catch (error) {
         console.error('Error reordering photos:', error);

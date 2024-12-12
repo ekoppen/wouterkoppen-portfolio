@@ -206,14 +206,31 @@ async function loadPhotos() {
 
 async function loadAlbums() {
     try {
-        albums = await apiLoadAlbums();
-        const container = document.getElementById('albumsContainer');
-        if (!container) return;
-        container.innerHTML = '';
+        const response = await apiLoadAlbums();
+        albums = response;
+
+        // Check of er een album is aangepast
+        const changedAlbumId = localStorage.getItem('album_order_changed');
+        if (changedAlbumId) {
+            // Verwijder de flag
+            localStorage.removeItem('album_order_changed');
+            
+            // Haal het specifieke album opnieuw op voor de meest recente data
+            const albumResponse = await fetchWithAuth(`/api/albums/${changedAlbumId}`);
+            if (albumResponse.ok) {
+                const updatedAlbum = await albumResponse.json();
+                // Update het album in de lijst
+                const index = albums.findIndex(a => a._id === changedAlbumId);
+                if (index !== -1) {
+                    albums[index] = updatedAlbum;
+                }
+            }
+        }
+
         renderAlbums();
-        updateItemCounts();
     } catch (error) {
         console.error('Error loading albums:', error);
+        showMessage('Fout bij laden van albums', 'error');
     }
 }
 
@@ -501,8 +518,8 @@ function renderAlbums() {
         
         // Voeg foto previews toe
         if (album.photos && album.photos.length > 0) {
-            // Neem de laatste 8 foto's en draai ze om zodat de nieuwste bovenop komt
-            const previewPhotos = album.photos.slice(-8).reverse();
+            // Neem de eerste 8 foto's
+            const previewPhotos = album.photos.slice(0, 8);
             
             // Laad de eerste foto om de gemiddelde kleur te bepalen
             const firstPhoto = new Image();
@@ -544,6 +561,7 @@ function renderAlbums() {
         albumCard.addEventListener('dragover', handleDragOver);
         albumCard.addEventListener('dragleave', handleDragLeave);
         albumCard.addEventListener('drop', (e) => {
+            e.stopPropagation(); // Voorkom event bubbling
             handleDrop(e, handlePhotoDropOnAlbum);
         });
 

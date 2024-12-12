@@ -89,7 +89,7 @@
     <header>
         <nav>
             <div class="nav-brand">
-                <a href="/admin" class="btn-icon" title="Terug naar Admin">
+                <a href="/admin" class="btn-icon" onclick="localStorage.getItem('album_order_changed') && window.location.reload(true)" title="Terug naar Admin">
                     <i class="fas fa-arrow-left"></i>
                 </a>
                 <h1>Album Beheer</h1>
