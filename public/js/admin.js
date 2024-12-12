@@ -428,12 +428,49 @@ async function handleDeleteAlbum(albumId) {
 // Foto naar album verplaatsen
 async function handlePhotoDropOnAlbum(photoId, albumId) {
     try {
-        const response = await fetchWithAuth(`/api/albums/${albumId}/photos/${photoId}`, {
+        // Eerst checken of de foto al in het album zit
+        const albumResponse = await fetchWithAuth(`/api/albums/${albumId}`);
+        if (!albumResponse.ok) throw new Error('Fout bij ophalen album');
+        
+        const album = await albumResponse.json();
+        if (album.photos.some(photo => photo._id === photoId)) {
+            showMessage('Deze foto zit al in het album', 'warning');
+            return;
+        }
+
+        // Eerst de foto toevoegen aan het album
+        const addResponse = await fetchWithAuth(`/api/albums/${albumId}/photos/${photoId}`, {
             method: 'PUT'
         });
 
-        if (!response.ok) {
+        if (!addResponse.ok) {
             throw new Error('Fout bij toevoegen van foto aan album');
+        }
+
+        // Nu het album opnieuw ophalen met de nieuwe foto
+        const updatedAlbumResponse = await fetchWithAuth(`/api/albums/${albumId}`);
+        if (!updatedAlbumResponse.ok) throw new Error('Fout bij ophalen album');
+        
+        const updatedAlbum = await updatedAlbumResponse.json();
+        
+        // De nieuwe foto naar voren verplaatsen
+        const photoIds = updatedAlbum.photos.map(photo => photo._id);
+        const newPhotoIndex = photoIds.indexOf(photoId);
+        if (newPhotoIndex !== -1) {
+            // Verwijder de foto uit de huidige positie
+            photoIds.splice(newPhotoIndex, 1);
+            // Voeg de foto vooraan toe
+            photoIds.unshift(photoId);
+
+            // Update de volgorde
+            const reorderResponse = await fetchWithAuth(`/api/albums/${albumId}/reorder`, {
+                method: 'PUT',
+                body: JSON.stringify({ photoIds })
+            });
+
+            if (!reorderResponse.ok) {
+                throw new Error('Fout bij aanpassen volgorde');
+            }
         }
 
         await loadAlbums();
