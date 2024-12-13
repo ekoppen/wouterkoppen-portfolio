@@ -27,7 +27,8 @@ services:
       - PORT=3000
       - JWT_SECRET=07ca2d54831393343c7a1a95e9b09f84fa3b011d9e36baa59af5b98ef5853a8416758b1c9aa46258d86b337413d4d23e51eff438dded86eed797dd3e1be158d6
       - ADMIN_USERNAME=admin
-      - ADMIN_PASSWORD=WouterKoppen2024!
+      - ADMIN_PASSWORD=admin123
+      - ADMIN_EMAIL=admin@wouterkoppen.nl
     volumes:
       - ./public:/app/public
       - ./routes:/app/routes

@@ -27,45 +27,6 @@ router.get('/', auth, isAdmin, async (req, res) => {
     }
 });
 
-// Inloggen
-router.post('/login', async (req, res) => {
-    try {
-        const { username, password } = req.body;
-        
-        // Zoek gebruiker
-        const user = await User.findOne({ username });
-        if (!user) {
-            return res.status(401).json({ error: 'Ongeldige inloggegevens' });
-        }
-
-        // Controleer wachtwoord
-        const isValid = await user.verifyPassword(password);
-        if (!isValid) {
-            return res.status(401).json({ error: 'Ongeldige inloggegevens' });
-        }
-
-        // Controleer of account actief is
-        if (!user.isActive) {
-            return res.status(401).json({ error: 'Account is gedeactiveerd' });
-        }
-
-        // Update laatste login
-        user.lastLogin = Date.now();
-        await user.save();
-
-        // Genereer JWT token
-        const token = jwt.sign(
-            { id: user._id, role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: '24h' }
-        );
-
-        res.json({ token, user: user.toJSON() });
-    } catch (error) {
-        res.status(500).json({ error: 'Fout bij inloggen' });
-    }
-});
-
 // Nieuwe gebruiker aanmaken (alleen admin)
 router.post('/', auth, isAdmin, async (req, res) => {
     try {

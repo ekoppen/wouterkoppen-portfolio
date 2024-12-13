@@ -2,11 +2,55 @@ const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
 const bcrypt = require('bcryptjs');
-const User = require('./models/User');
-const Theme = require('./models/Theme');
 require('dotenv').config();
 
+const User = require('./models/User');
+const Theme = require('./models/Theme');
+
 const app = express();
+
+// Admin gebruiker aanmaken als deze nog niet bestaat
+async function createAdminUser() {
+    try {
+        const username = 'admin';
+        const email = 'admin@wouterkoppen.nl';
+        const password = 'admin123';
+
+        // Controleer of admin gebruiker al bestaat
+        const adminExists = await User.findOne({ username });
+        if (!adminExists) {
+            // Hash het wachtwoord
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
+            console.log('Nieuw wachtwoord hash:', hashedPassword);
+            
+            // Maak de admin gebruiker aan
+            const admin = new User({
+                username,
+                email,
+                password: hashedPassword,
+                role: 'admin'
+            });
+            
+            await admin.save();
+            console.log('Admin gebruiker aangemaakt met hash:', hashedPassword);
+        } else {
+            // Update het wachtwoord van de bestaande admin gebruiker
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
+            console.log('Bijgewerkt wachtwoord hash:', hashedPassword);
+            
+            adminExists.password = hashedPassword;
+            await adminExists.save();
+            console.log('Admin wachtwoord bijgewerkt met hash:', hashedPassword);
+        }
+    } catch (error) {
+        console.error('Fout bij aanmaken admin gebruiker:', error);
+        if (error.errors) {
+            console.error('Validation errors:', error.errors);
+        }
+    }
+}
 
 // MongoDB verbinding
 mongoose.connect(process.env.MONGODB_URI, {
@@ -30,6 +74,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 // API Routes
 const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/users');
 const uploadRoutes = require('./routes/upload');
 const albumRoutes = require('./routes/albums');
 const pageRoutes = require('./routes/pages');
@@ -37,32 +82,12 @@ const themeRoutes = require('./routes/themes');
 const photoRoutes = require('./routes/photos');
 
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/photos', photoRoutes);
 app.use('/api/albums', albumRoutes);
 app.use('/api/pages', pageRoutes);
 app.use('/api/themes', themeRoutes);
-
-// Admin gebruiker aanmaken als deze nog niet bestaat
-async function createAdminUser() {
-    try {
-        const adminExists = await User.findOne({ username: 'admin' });
-        if (!adminExists) {
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin', salt);
-            
-            const admin = new User({
-                username: 'admin',
-                password: hashedPassword
-            });
-            
-            await admin.save();
-            console.log('Admin gebruiker aangemaakt');
-        }
-    } catch (error) {
-        console.error('Fout bij aanmaken admin gebruiker:', error);
-    }
-}
 
 // Standaard thema aanmaken als er nog geen actief thema is
 async function createDefaultTheme() {
