@@ -110,11 +110,22 @@
                                 <i class="fas fa-list"></i>
                             </button>
                         </div>
-                        <div class="thumbnail-control">
+                        <div class="thumbnail-control grid-view-only">
                             <i class="fas fa-image" title="Thumbnail grootte"></i>
                             <input type="range" id="thumbnailSize" min="100" max="400" step="50" value="200" title="Pas thumbnail grootte aan">
                         </div>
-                        <button class="btn-primary" onclick="showUploadDialog()" title="Upload foto's">
+                        <div class="list-view-actions" style="display: none;">
+                            <button class="btn-secondary" onclick="toggleSelectMode()" title="Selecteer meerdere foto's">
+                                <i class="fas fa-check-square"></i>
+                            </button>
+                            <button class="btn-secondary" onclick="addSelectedToAlbum()" title="Voeg geselecteerde foto's toe aan album" style="display: none;">
+                                <i class="fas fa-folder-plus"></i>
+                            </button>
+                            <button class="btn-danger" onclick="deleteSelectedPhotos()" title="Verwijder geselecteerde foto's" style="display: none;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        <button class="btn-primary" onclick="openUploadDialog()" title="Upload foto's">
                             <i class="fas fa-upload"></i>
                         </button>
                         <button class="btn-collapse" data-section="photos-section">
@@ -131,11 +142,13 @@
                         <table class="photos-list">
                             <thead>
                                 <tr>
+                                    <th class="select-cell">
+                                        <input type="checkbox" id="selectAllPhotos" style="display: none;">
+                                    </th>
                                     <th class="filename-cell" data-sort="filename">Bestandsnaam</th>
                                     <th class="type-cell" data-sort="type">Type</th>
                                     <th class="date-cell" data-sort="date">Geüpload</th>
-                                    <th class="album-cell" data-sort="album">Album</th>
-                                    <th class="actions-cell"></th>
+                                    <th class="album-cell" data-sort="album">Albums</th>
                                 </tr>
                             </thead>
                             <tbody id="photosListBody">
@@ -179,7 +192,7 @@
                     </dl>
                 </div>
                 <div class="album-actions">
-                    <button class="btn-danger" onclick="handleDeleteAlbum(currentAlbumId)" title="Verwijder album">
+                    <button class="btn-danger" onclick="handleDeleteAlbum(window.currentAlbumId)" title="Verwijder album">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
