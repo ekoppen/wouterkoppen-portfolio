@@ -104,10 +104,14 @@ document.addEventListener('DOMContentLoaded', () => {
         handlePageThemeChange,
         startEditingAlbumTitle,
         startEditingAlbumDescription,
+<<<<<<< HEAD
         openUploadDialog,
         toggleSelectMode,
         addSelectedToAlbum,
         deleteSelectedPhotos
+=======
+        showUploadDialog
+>>>>>>> 9d7a143cfd1fd918ecf093a24ead09ff2d03c0ea
     });
 });
 
@@ -2102,4 +2106,56 @@ function getSortedPhotos() {
         if (valueA > valueB) return 1 * modifier;
         return 0;
     });
+}
+
+// Upload dialog functie
+function showUploadDialog() {
+    // Maak een verborgen file input element
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.multiple = true;
+    fileInput.accept = 'image/*';
+    
+    // Voeg een change event listener toe
+    fileInput.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+        
+        // Maak een FormData object voor de upload
+        const formData = new FormData();
+        files.forEach(file => {
+            formData.append('photos', file);
+        });
+        
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                    // Geen Content-Type header nodig, wordt automatisch gezet door de browser
+                },
+                body: formData
+            });
+            
+            if (!response.ok) {
+                throw new Error('Upload mislukt');
+            }
+            
+            // Herlaad de foto's na succesvolle upload
+            await loadPhotos();
+            showMessage(`${files.length} foto('s) succesvol geüpload`, 'success');
+        } catch (error) {
+            console.error('Upload error:', error);
+            showMessage('Fout bij uploaden van foto\'s', 'error');
+        }
+    });
+    
+    // Trigger de file dialog
+    fileInput.click();
 }

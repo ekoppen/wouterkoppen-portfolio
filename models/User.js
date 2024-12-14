@@ -10,10 +10,10 @@ const userSchema = new mongoose.Schema({
     },
     email: {
         type: String,
-        required: true,
         unique: true,
         trim: true,
-        lowercase: true
+        lowercase: true,
+        default: 'admin@wouterkoppen.nl'
     },
     password: {
         type: String,
@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
     role: {
         type: String,
         enum: ['admin', 'editor', 'viewer'],
-        default: 'viewer'
+        default: 'admin'
     },
     isActive: {
         type: Boolean,
@@ -41,18 +41,23 @@ const userSchema = new mongoose.Schema({
     }
 });
 
-// Hash het wachtwoord voor het opslaan
-userSchema.pre('save', async function(next) {
-    if (this.isModified('password')) {
-        this.password = await bcrypt.hash(this.password, 10);
-    }
-    this.updatedAt = Date.now();
-    next();
-});
-
 // Methode om wachtwoord te verifiëren
 userSchema.methods.verifyPassword = async function(password) {
-    return await bcrypt.compare(password, this.password);
+    try {
+        console.log('Verifiëren van wachtwoord...');
+        console.log('Gebruiker:', this.username);
+        console.log('Rol:', this.role);
+        console.log('Ingevoerd wachtwoord:', password);
+        console.log('Opgeslagen hash:', this.password);
+        
+        // Gebruik bcrypt.compare voor de vergelijking
+        const result = await bcrypt.compare(password, this.password);
+        console.log('Bcrypt vergelijking resultaat:', result);
+        return result;
+    } catch (error) {
+        console.error('Fout bij wachtwoord verificatie:', error);
+        return false;
+    }
 };
 
 // Methode om gebruikersgegevens te retourneren zonder gevoelige informatie
