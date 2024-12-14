@@ -104,14 +104,10 @@ document.addEventListener('DOMContentLoaded', () => {
         handlePageThemeChange,
         startEditingAlbumTitle,
         startEditingAlbumDescription,
-<<<<<<< HEAD
         openUploadDialog,
         toggleSelectMode,
         addSelectedToAlbum,
         deleteSelectedPhotos
-=======
-        showUploadDialog
->>>>>>> 9d7a143cfd1fd918ecf093a24ead09ff2d03c0ea
     });
 });
 
