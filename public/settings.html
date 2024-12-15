@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instellingen - Wouter Koppen</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Droid+Sans+Mono&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        .settings-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .settings-section {
+            background: var(--background-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .settings-section h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .setting-group {
+            margin-bottom: 20px;
+        }
+
+        .setting-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .setting-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .setting-description {
+            color: var(--text-muted);
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .setting-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--input-background);
+            color: var(--text-color);
+        }
+
+        .setting-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .settings-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--border-color);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: var(--primary-color);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        .color-picker {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .color-preview {
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="nav-brand">
+                <h1>Instellingen</h1>
+            </div>
+            <div class="nav-links">
+                <a href="/admin.html" class="btn-icon" title="Terug naar dashboard">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="settings-container">
+        <section class="settings-section">
+            <h2>Algemene Instellingen</h2>
+            
+            <div class="setting-group">
+                <label class="setting-label">Website Titel</label>
+                <div class="setting-description">De titel die wordt weergegeven in de browser en op de homepage.</div>
+                <input type="text" id="siteTitle" class="setting-input" value="Wouter Koppen">
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-label">Website Beschrijving</label>
+                <div class="setting-description">Een korte beschrijving van de website voor zoekmachines.</div>
+                <textarea id="siteDescription" class="setting-input" rows="3"></textarea>
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-label">Footer Tekst</label>
+                <div class="setting-description">Tekst die onderaan elke pagina wordt weergegeven.</div>
+                <input type="text" id="footerText" class="setting-input">
+            </div>
+        </section>
+
+        <section class="settings-section">
+            <h2>Weergave Instellingen</h2>
+            
+            <div class="setting-group">
+                <label class="setting-label">Standaard Thema</label>
+                <div class="setting-description">Het thema dat wordt gebruikt als er geen specifiek thema is ingesteld.</div>
+                <select id="defaultTheme" class="setting-input">
+                    <option value="light">Licht</option>
+                    <option value="dark">Donker</option>
+                    <option value="auto">Automatisch (systeem)</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-label">Foto's per Pagina</label>
+                <div class="setting-description">Aantal foto's dat per pagina wordt weergegeven in het overzicht.</div>
+                <input type="number" id="photosPerPage" class="setting-input" min="12" max="100" step="12" value="24">
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-label">Standaard Foto Weergave</label>
+                <div class="setting-description">De standaard weergave voor foto's in het admin dashboard.</div>
+                <select id="defaultPhotoView" class="setting-input">
+                    <option value="grid">Grid</option>
+                    <option value="list">Lijst</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="settings-section">
+            <h2>Optimalisatie</h2>
+            
+            <div class="setting-group">
+                <label class="setting-label">Automatische Thumbnails</label>
+                <div class="setting-description">Genereer automatisch thumbnails voor betere prestaties.</div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="autoThumbnails" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-label">Maximale Thumbnail Grootte</label>
+                <div class="setting-description">De maximale breedte/hoogte van gegenereerde thumbnails in pixels.</div>
+                <input type="number" id="maxThumbnailSize" class="setting-input" min="200" max="1000" step="100" value="400">
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-label">Foto Compressie</label>
+                <div class="setting-description">Compressieniveau voor geüploade foto's (0-100).</div>
+                <input type="range" id="photoCompression" class="setting-input" min="0" max="100" value="85">
+                <div id="compressionValue" style="text-align: center; margin-top: 5px;">85%</div>
+            </div>
+        </section>
+
+        <div class="settings-actions">
+            <button class="btn-secondary" onclick="resetSettings()">Standaardinstellingen</button>
+            <button class="btn-primary" onclick="saveSettings()">Opslaan</button>
+        </div>
+    </main>
+
+    <script type="module" src="/js/settings.js"></script>
+</body>
+</html> 

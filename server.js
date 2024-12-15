@@ -80,6 +80,7 @@ const albumRoutes = require('./routes/albums');
 const pageRoutes = require('./routes/pages');
 const themeRoutes = require('./routes/themes');
 const photoRoutes = require('./routes/photos');
+const settingsRoutes = require('./routes/settings');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -88,6 +89,7 @@ app.use('/api/photos', photoRoutes);
 app.use('/api/albums', albumRoutes);
 app.use('/api/pages', pageRoutes);
 app.use('/api/themes', themeRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Standaard thema aanmaken als er nog geen actief thema is
 async function createDefaultTheme() {
