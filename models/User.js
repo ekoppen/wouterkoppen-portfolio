@@ -23,43 +23,45 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['admin', 'editor', 'viewer'],
         default: 'viewer'
-    },
-    isActive: {
-        type: Boolean,
-        default: true
-    },
-    lastLogin: {
-        type: Date
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
     }
 });
 
-// Hash het wachtwoord voor het opslaan
 userSchema.pre('save', async function(next) {
-    if (this.isModified('password')) {
-        this.password = await bcrypt.hash(this.password, 10);
+    if (!this.isModified('password')) return next();
+    
+    if (this.password.startsWith('$2a$')) {
+        console.log('Wachtwoord is al gehashed, sla hashing over');
+        return next();
     }
-    this.updatedAt = Date.now();
-    next();
+    
+    console.log('Hashing plain text wachtwoord...');
+    try {
+        this.password = await bcrypt.hash(this.password, 10);
+        console.log('Wachtwoord succesvol gehashed');
+        next();
+    } catch (error) {
+        console.error('Fout bij hashen wachtwoord:', error);
+        next(error);
+    }
 });
 
-// Methode om wachtwoord te verifiëren
-userSchema.methods.verifyPassword = async function(password) {
-    return await bcrypt.compare(password, this.password);
+userSchema.methods.verifyPassword = async function(candidatePassword) {
+    try {
+        console.log('Verifiëren wachtwoord...');
+        console.log('Opgeslagen hash:', this.password);
+        const isMatch = await bcrypt.compare(candidatePassword, this.password);
+        console.log('Verificatie resultaat:', isMatch);
+        return isMatch;
+    } catch (error) {
+        console.error('Fout bij wachtwoord verificatie:', error);
+        throw error;
+    }
 };
 
-// Methode om gebruikersgegevens te retourneren zonder gevoelige informatie
 userSchema.methods.toJSON = function() {
-    const user = this.toObject();
-    delete user.password;
-    return user;
+    const obj = this.toObject();
+    delete obj.password;
+    return obj;
 };
 
 module.exports = mongoose.model('User', userSchema); 

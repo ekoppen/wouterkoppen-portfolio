@@ -241,9 +241,9 @@ router.delete('/:id/photos/:photoId', auth, async (req, res) => {
 // Haal album op basis van naam
 router.get('/by-name/:name', async (req, res) => {
     try {
-        const album = await Album.findOne({ title: req.params.name })
-            .populate('photos')
-            .exec();
+        const album = await Album.findOne({ 
+            title: new RegExp('^' + req.params.name + '$', 'i')
+        }).populate('photos');
         
         if (!album) {
             return res.status(404).json({ message: 'Album niet gevonden' });
@@ -251,7 +251,7 @@ router.get('/by-name/:name', async (req, res) => {
         
         res.json(album);
     } catch (error) {
-        console.error('Error fetching album by name:', error);
+        console.error('Error getting album by name:', error);
         res.status(500).json({ message: 'Server error' });
     }
 });
