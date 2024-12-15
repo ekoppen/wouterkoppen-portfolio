@@ -188,41 +188,23 @@ async function checkAuth() {
 
 // Initialisatie
 async function initialize() {
-    // Debug code voor hover events
-    console.log('Admin interface initialiseren...');
-    const albumCards = document.querySelectorAll('.album-card');
-    console.log('Gevonden album cards:', albumCards.length);
-    
-    albumCards.forEach(card => {
-        card.addEventListener('mouseenter', () => {
-            console.log('Hover start op album card:', card);
-            const photos = card.querySelectorAll('.preview-photo');
-            photos.forEach((photo, index) => {
-                console.log(`Preview photo ${index + 1} transform:`, getComputedStyle(photo).transform);
-            });
-        });
-        
-        card.addEventListener('mouseleave', () => {
-            console.log('Hover einde op album card:', card);
-            const photos = card.querySelectorAll('.preview-photo');
-            photos.forEach((photo, index) => {
-                console.log(`Preview photo ${index + 1} transform:`, getComputedStyle(photo).transform);
-            });
-        });
-    });
-
     try {
         await checkAuth();
         await ensureHomeAlbumExists();
+        
+        // Laad eerst albums, dan pas de rest
+        await loadAlbums();
+        
         await Promise.all([
             loadThemes(),
             loadPages(),
-            loadPhotos(),
-            loadAlbums()
+            loadPhotos()
         ]);
+        
         initializeDragAndDrop();
         initializeThumbnailSizeControl();
         initializeCollapsibleSections();
+        setupViewControls();
         await initializeTheme();
     } catch (error) {
         console.error('Initialization error:', error);
@@ -542,18 +524,34 @@ function renderListView(sortedPhotos) {
 
     listBody.innerHTML = '';
     
+    // Wacht met renderen tot we albums hebben
+    if (!albums || albums.length === 0) {
+        // Probeer albums opnieuw te laden als ze er niet zijn
+        loadAlbums().then(() => {
+            renderListView(sortedPhotos);
+        });
+        return;
+    }
+    
     sortedPhotos.forEach(photo => {
         const row = document.createElement('tr');
         row.dataset.id = photo._id;
         
         // Bereken in welke albums deze foto zit
         const photoAlbums = albums.filter(album => 
-            album.photos.some(p => p._id === photo._id)
+            album.photos && album.photos.some(p => p._id === photo._id)
         );
+
+        // Format de datum (alleen datum deel)
+        const uploadDate = photo.createdAt ? new Date(photo.createdAt).toLocaleDateString('nl-NL', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }) : '-';
         
         row.innerHTML = `
             <td class="select-cell">
-                <input type="checkbox" class="photo-select-checkbox" style="display: ${isSelectMode ? 'block' : 'none'}"
+                <input type="checkbox" class="photo-select-checkbox"
                        ${selectedPhotos.has(photo._id) ? 'checked' : ''}>
             </td>
             <td class="filename-cell">
@@ -563,7 +561,7 @@ function renderListView(sortedPhotos) {
                 </div>
             </td>
             <td class="type-cell">${photo.mimetype ? photo.mimetype.split('/')[1].toUpperCase() : '-'}</td>
-            <td class="date-cell">${photo.uploadDate ? new Date(photo.uploadDate).toLocaleDateString() : '-'}</td>
+            <td class="date-cell">${uploadDate}</td>
             <td class="album-cell">
                 ${photoAlbums.map(album => `
                     <span class="album-tag">${album.title}</span>
@@ -646,7 +644,7 @@ function renderAlbums() {
             // Neem de eerste 8 foto's
             const previewPhotos = album.photos.slice(0, 8);
             
-            previewPhotos.forEach(photo => {
+            previewPhotos.forEach((photo, index) => {
                 const previewContainer = document.createElement('div');
                 previewContainer.className = 'preview-photo';
                 
@@ -654,6 +652,14 @@ function renderAlbums() {
                 img.src = photo.path;
                 img.alt = photo.title || 'Preview';
                 img.loading = 'lazy';  // Lazy loading voor betere performance
+                
+                // Als dit de eerste foto is, bereken dan de gemiddelde kleur
+                if (index === 0) {
+                    img.onload = () => {
+                        const avgColor = getAverageColor(img);
+                        albumPreview.style.backgroundColor = `rgb(${avgColor.r}, ${avgColor.g}, ${avgColor.b})`;
+                    };
+                }
                 
                 previewContainer.appendChild(img);
                 albumPreview.appendChild(previewContainer);
@@ -1940,13 +1946,19 @@ function setupViewControls() {
     const thumbnailControl = document.querySelector('.thumbnail-control');
     const listViewActions = document.querySelector('.list-view-actions');
     
-    // Zet initiële weergave
-    container.className = `photos-container ${currentView}-view`;
+    // Haal de opgeslagen view preference op
+    currentView = localStorage.getItem('photos_view') || 'grid';
+    
+    // Reset alle actieve states
     viewToggles.forEach(toggle => {
+        toggle.classList.remove('active');
         if (toggle.dataset.view === currentView) {
             toggle.classList.add('active');
         }
     });
+
+    // Zet initiële weergave
+    container.className = `photos-container ${currentView}-view`;
 
     // Toon/verberg controls gebaseerd op view
     if (currentView === 'list') {
@@ -1996,14 +2008,31 @@ function setupViewControls() {
     
     // Setup sorting
     const sortHeaders = document.querySelectorAll('.photos-list th[data-sort]');
-    
-    // Zet initiële sortering
-    if (currentSort.field) {
-        const currentHeader = Array.from(sortHeaders).find(h => h.dataset.sort === currentSort.field);
-        if (currentHeader) {
-            currentHeader.classList.add(`sorted-${currentSort.direction}`);
-        }
-    }
+    sortHeaders.forEach(header => {
+        header.addEventListener('click', () => {
+            const field = header.dataset.sort;
+            
+            // Toggle direction if same field
+            if (currentSort.field === field) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.field = field;
+                currentSort.direction = 'asc';
+            }
+            
+            // Update header classes
+            sortHeaders.forEach(h => {
+                h.classList.remove('sorted-asc', 'sorted-desc');
+            });
+            header.classList.add(`sorted-${currentSort.direction}`);
+            
+            // Sla sorteervoorkeur op
+            localStorage.setItem('photos_sort', JSON.stringify(currentSort));
+            
+            // Re-render with new sort
+            renderPhotos();
+        });
+    });
     
     // Setup select all functionality
     const selectAllCheckbox = document.getElementById('selectAllPhotos');
@@ -2029,12 +2058,22 @@ async function addSelectedToAlbum() {
     if (selectedPhotos.size === 0) return;
 
     // Toon album selectie dialog
-    const albumOptions = albums.map(album => 
-        `<option value="${album._id}">${album.title}</option>`
-    ).join('');
+    const albumOptions = albums
+        .filter(album => album.title.toLowerCase() !== 'home') // Excludeer het home album
+        .map(album => 
+            `<option value="${album._id}">${album.title}</option>`
+        ).join('');
 
-    showConfirmDialog(async (confirmed, albumId) => {
-        if (confirmed && albumId) {
+    showConfirmDialog(async (confirmed) => {
+        if (confirmed) {
+            const albumSelect = document.getElementById('albumSelect');
+            const albumId = albumSelect.value;
+            
+            if (!albumId) {
+                showMessage('Selecteer eerst een album', 'warning');
+                return;
+            }
+
             try {
                 // Voeg alle geselecteerde foto's toe aan het album
                 const addPromises = Array.from(selectedPhotos).map(photoId =>
@@ -2061,7 +2100,8 @@ async function addSelectedToAlbum() {
         selectField: true,
         selectOptions: albumOptions,
         confirmText: 'Toevoegen',
-        cancelText: 'Annuleren'
+        cancelText: 'Annuleren',
+        isDangerous: false
     });
 }
 
