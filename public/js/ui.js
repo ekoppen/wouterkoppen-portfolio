@@ -40,7 +40,10 @@ export function showConfirmDialog(callback, options = {}) {
         cancelText = 'Annuleren',
         inputField = false,
         inputValue = '',
-        isDangerous = false
+        isDangerous = false,
+        showAlbumSelect = false,
+        albums = [],
+        selectedPhotoIds = []
     } = options;
 
     const overlay = document.getElementById('overlay');
@@ -48,6 +51,8 @@ export function showConfirmDialog(callback, options = {}) {
     const messageElement = document.getElementById('confirmMessage');
     const confirmButton = document.getElementById('confirmDelete');
     const cancelButton = document.getElementById('cancelDelete');
+    const albumSelectContainer = document.getElementById('albumSelectContainer');
+    const albumList = albumSelectContainer.querySelector('.album-list');
     
     messageElement.textContent = message;
     confirmButton.textContent = confirmText;
@@ -59,6 +64,33 @@ export function showConfirmDialog(callback, options = {}) {
         confirmButton.classList.remove('btn-danger');
     }
 
+    // Album selectie
+    if (showAlbumSelect && albums.length > 0) {
+        albumList.innerHTML = '';
+        
+        // Maak checkboxes voor elk album
+        albums.forEach(album => {
+            const isInAlbum = selectedPhotoIds.length > 0 && 
+                             album.photos && 
+                             album.photos.some(photo => selectedPhotoIds.includes(photo._id));
+            const albumDiv = document.createElement('div');
+            albumDiv.className = 'album-checkbox-container';
+            albumDiv.innerHTML = `
+                <label class="album-checkbox">
+                    <input type="checkbox" value="${album.id}" 
+                           ${isInAlbum ? 'checked' : ''}>
+                    <span>${album.title}</span>
+                    <span class="photo-count">(${isInAlbum ? 'Toegevoegd' : 'Niet toegevoegd'})</span>
+                </label>
+            `;
+            albumList.appendChild(albumDiv);
+        });
+
+        albumSelectContainer.style.display = 'block';
+    } else {
+        albumSelectContainer.style.display = 'none';
+    }
+
     let input = null;
     if (inputField) {
         input = document.createElement('input');
@@ -68,13 +100,17 @@ export function showConfirmDialog(callback, options = {}) {
         messageElement.appendChild(input);
     }
 
-    overlay.classList.add('show');
+    overlay.classList.add('active');
     dialog.classList.add('show');
 
     const handleConfirm = () => {
         const value = input ? input.value.trim() : null;
+        const selectedAlbumIds = Array.from(albumList.querySelectorAll('input[type="checkbox"]:checked'))
+            .map(cb => cb.value);
+        const unselectedAlbumIds = Array.from(albumList.querySelectorAll('input[type="checkbox"]:not(:checked)'))
+            .map(cb => cb.value);
         cleanup();
-        callback(true, value);
+        callback(true, value, selectedAlbumIds, unselectedAlbumIds);
     };
 
     const handleCancel = () => {
@@ -95,7 +131,7 @@ export function showConfirmDialog(callback, options = {}) {
     document.addEventListener('keydown', handleKeydown);
 
     const cleanup = () => {
-        overlay.classList.remove('show');
+        overlay.classList.remove('active');
         dialog.classList.remove('show');
         if (input) {
             input.remove();

@@ -2055,54 +2055,95 @@ function setupViewControls() {
 
 // Voeg geselecteerde foto's toe aan album
 async function addSelectedToAlbum() {
-    if (selectedPhotos.size === 0) return;
+    if (selectedPhotos.size === 0) {
+        showMessage('Geen foto\'s geselecteerd', 'error');
+        return;
+    }
 
-    // Toon album selectie dialog
-    const albumOptions = albums
-        .filter(album => album.title.toLowerCase() !== 'home') // Excludeer het home album
-        .map(album => 
-            `<option value="${album._id}">${album.title}</option>`
-        ).join('');
-
-    showConfirmDialog(async (confirmed) => {
-        if (confirmed) {
-            const albumSelect = document.getElementById('albumSelect');
-            const albumId = albumSelect.value;
-            
-            if (!albumId) {
-                showMessage('Selecteer eerst een album', 'warning');
-                return;
-            }
-
-            try {
-                // Voeg alle geselecteerde foto's toe aan het album
-                const addPromises = Array.from(selectedPhotos).map(photoId =>
-                    fetchWithAuth(`/api/albums/${albumId}/photos/${photoId}`, {
-                        method: 'PUT'
-                    })
-                );
-
-                await Promise.all(addPromises);
-                await loadAlbums();
-                showMessage(`${selectedPhotos.size} foto's succesvol toegevoegd aan album`);
-                
-                // Reset selectie
-                selectedPhotos.clear();
-                updateSelectionActions();
-                renderPhotos();
-            } catch (error) {
-                console.error('Error adding photos to album:', error);
-                showMessage('Fout bij toevoegen van foto\'s aan album', 'error');
-            }
+    try {
+        const response = await fetch('/api/albums');
+        const albums = await response.json();
+        
+        if (albums.length === 0) {
+            showMessage('Er zijn nog geen albums beschikbaar', 'error');
+            return;
         }
-    }, {
-        message: 'Selecteer een album:',
-        selectField: true,
-        selectOptions: albumOptions,
-        confirmText: 'Toevoegen',
-        cancelText: 'Annuleren',
-        isDangerous: false
-    });
+
+        showConfirmDialog(async (confirmed, _, selectedAlbumIds, unselectedAlbumIds) => {
+            if (confirmed) {
+                try {
+                    // Voeg foto's één voor één toe aan geselecteerde albums
+                    for (const albumId of selectedAlbumIds) {
+                        for (const photoId of selectedPhotos) {
+                            try {
+                                const response = await fetchWithAuth(`/api/albums/${albumId}/photos/${photoId}`, {
+                                    method: 'PUT'
+                                });
+                                if (!response.ok) {
+                                    throw new Error(`Fout bij toevoegen aan album: ${response.statusText}`);
+                                }
+                            } catch (error) {
+                                console.error(`Fout bij toevoegen van foto ${photoId} aan album ${albumId}:`, error);
+                                // Ga door met de volgende foto
+                            }
+                        }
+                    }
+
+                    // Verwijder foto's één voor één uit niet-geselecteerde albums
+                    for (const albumId of unselectedAlbumIds) {
+                        for (const photoId of selectedPhotos) {
+                            try {
+                                const response = await fetchWithAuth(`/api/albums/${albumId}/photos/${photoId}`, {
+                                    method: 'DELETE'
+                                });
+                                if (!response.ok) {
+                                    throw new Error(`Fout bij verwijderen uit album: ${response.statusText}`);
+                                }
+                            } catch (error) {
+                                console.error(`Fout bij verwijderen van foto ${photoId} uit album ${albumId}:`, error);
+                                // Ga door met de volgende foto
+                            }
+                        }
+                    }
+                    
+                    await Promise.all([
+                        loadPhotos(), // Ververs de foto lijst
+                        loadAlbums()  // Ververs de albums
+                    ]);
+                    showMessage(`Album associaties bijgewerkt`);
+                    
+                    // Reset selectie
+                    selectedPhotos.clear();
+                    const selectAllCheckbox = document.getElementById('selectAllPhotos');
+                    if (selectAllCheckbox) {
+                        selectAllCheckbox.checked = false;
+                    }
+                    document.querySelectorAll('.photo-select-checkbox').forEach(cb => {
+                        cb.checked = false;
+                    });
+                    
+                    toggleSelectMode(); // Schakel selectie modus uit
+                } catch (error) {
+                    console.error('Error:', error);
+                    showMessage(error.message || 'Fout bij bijwerken album associaties', 'error');
+                }
+            }
+        }, {
+            message: `Selecteer albums voor ${selectedPhotos.size} foto${selectedPhotos.size === 1 ? '' : '\'s'}`,
+            confirmText: 'Opslaan',
+            cancelText: 'Annuleren',
+            showAlbumSelect: true,
+            albums: albums.map(album => ({ 
+                id: album._id, 
+                title: album.title,
+                photos: album.photos || []
+            })),
+            selectedPhotoIds: Array.from(selectedPhotos)
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        showMessage('Fout bij ophalen van albums', 'error');
+    }
 }
 
 // Helper functie voor het sorteren van foto's
@@ -2194,4 +2235,9 @@ function showUploadDialog() {
     
     // Trigger de file dialog
     fileInput.click();
+}
+
+// Helper functie om geselecteerde foto IDs te verzamelen
+function getSelectedPhotos() {
+    return selectedPhotos;
 }
