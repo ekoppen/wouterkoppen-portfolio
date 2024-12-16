@@ -38,56 +38,21 @@ async function fetchWithAuth(url, options = {}) {
 // Check auth status
 async function checkAuth() {
     const token = localStorage.getItem('token');
-    const menuDropdown = document.getElementById('menuDropdown');
+    if (!token) return;
     
-    if (token) {
-        try {
-            const response = await fetchWithAuth('/api/auth/check');
-            if (response.ok) {
-                menuDropdown.innerHTML = `
-                    <a href="/admin" class="menu-item">
-                        <i class="fas fa-cog"></i>Admin
-                    </a>
-                    <a href="#" class="menu-item" onclick="logout(event)">
-                        <i class="fas fa-sign-out-alt"></i>Uitloggen
-                    </a>
-                `;
-                return;
-            }
-        } catch (error) {
-            console.error('Auth check error:', error);
+    try {
+        const response = await fetchWithAuth('/api/auth/check');
+        if (!response.ok) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('user');
         }
-        
-        // Als we hier komen is de token ongeldig
+    } catch (error) {
+        console.error('Auth check error:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
     }
-    
-    // Niet ingelogd
-    menuDropdown.innerHTML = `
-        <a href="/login" class="menu-item">
-            <i class="fas fa-sign-in-alt"></i>Login
-        </a>
-    `;
-}
-
-// Menu toggle functionaliteit
-function setupMenu() {
-    const menuButton = document.getElementById('menuButton');
-    const menuDropdown = document.getElementById('menuDropdown');
-    
-    menuButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        menuDropdown.classList.toggle('show');
-    });
-    
-    // Sluit menu bij klik buiten menu
-    document.addEventListener('click', (e) => {
-        if (!menuDropdown.contains(e.target) && !menuButton.contains(e.target)) {
-            menuDropdown.classList.remove('show');
-        }
-    });
 }
 
 // Update de logout functie
@@ -258,7 +223,7 @@ function showPhoto(index) {
     // Genereer unieke ID voor deze weergave
     const viewId = Date.now().toString(36) + Math.random().toString(36).substr(2);
     
-    // Maak nieuwe foto slide met extra attributen
+    // Maak nieuwe foto slide
     const newSlide = document.createElement('div');
     newSlide.className = 'photo-slide';
     newSlide.style.backgroundImage = `url(${photo.path}?v=${viewId})`;
@@ -266,39 +231,23 @@ function showPhoto(index) {
     newSlide.setAttribute('data-protected', 'true');
     newSlide.setAttribute('data-view-id', viewId);
     
-    // Voeg random noise toe aan de afbeelding (subtiel)
-    newSlide.style.filter = `blur(15px) contrast(1.01) brightness(0.99)`;
-    
     // Verwijder oude slides
     const oldSlides = container.querySelectorAll('.photo-slide');
     oldSlides.forEach(slide => {
         if (slide.classList.contains('active')) {
             slide.classList.remove('active');
             slide.classList.add('previous');
+            setTimeout(() => slide.remove(), 800);
+        } else {
+            slide.remove();
         }
     });
 
-    // Laad de afbeelding voor kleuranalyse
-    const img = new Image();
-    img.crossOrigin = "Anonymous";
-    img.onload = () => {
-        const bgColor = getImageColor(img);
-        const textColor = getContrastColor(bgColor);
-        
-        document.documentElement.style.setProperty('--adaptive-text-color', textColor);
-        
-        requestAnimationFrame(() => {
-            newSlide.classList.add('active');
-            setTimeout(() => {
-                oldSlides.forEach(slide => {
-                    slide.remove();
-                });
-            }, 800);
-        });
-    };
-    img.src = photo.path + '?v=' + viewId;
-    
+    // Voeg nieuwe slide toe en activeer deze
     container.appendChild(newSlide);
+    requestAnimationFrame(() => {
+        newSlide.classList.add('active');
+    });
     
     // Reset en start timer
     resetSlideTimer();
@@ -420,11 +369,51 @@ async function switchAlbum(albumName) {
     }
 }
 
-// Initialisatie
+// Voeg deze functie toe boven de DOMContentLoaded event listener
+function setupDescriptionToggle() {
+    const toggleButton = document.getElementById('toggleDescription');
+    const carouselContainer = document.querySelector('.carousel-container');
+    const albumDescription = document.querySelector('.album-description');
+    
+    if (!toggleButton || !carouselContainer || !albumDescription) {
+        console.error('Benodigde elementen niet gevonden voor description toggle');
+        return;
+    }
+
+    let isDescriptionVisible = false;
+
+    toggleButton.addEventListener('click', () => {
+        console.log('Toggle button clicked'); // Debug log
+        isDescriptionVisible = !isDescriptionVisible;
+        
+        // Force a reflow to ensure the transition works
+        carouselContainer.offsetHeight;
+        
+        if (isDescriptionVisible) {
+            carouselContainer.classList.add('show-description');
+            toggleButton.querySelector('i').classList.remove('fa-align-left');
+            toggleButton.querySelector('i').classList.add('fa-times');
+            
+            // Update de beschrijving met de huidige album info
+            if (currentAlbum) {
+                const titleElement = albumDescription.querySelector('.album-title');
+                const textElement = albumDescription.querySelector('.album-text');
+                if (titleElement) titleElement.textContent = currentAlbum.title || '';
+                if (textElement) textElement.textContent = currentAlbum.description || '';
+            }
+        } else {
+            carouselContainer.classList.remove('show-description');
+            toggleButton.querySelector('i').classList.add('fa-align-left');
+            toggleButton.querySelector('i').classList.remove('fa-times');
+        }
+    });
+}
+
+// Update de DOMContentLoaded event listener
 document.addEventListener('DOMContentLoaded', () => {
     setupImageProtection();
     setupAdvancedProtection();
-    setupMenu();
+    setupDescriptionToggle();
     
     // Voorkom dat de pagina in cache wordt opgeslagen
     window.onunload = () => {};
@@ -484,3 +473,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Maak logout functie globaal beschikbaar
 window.logout = logout; 
+
+async function loadAlbum(albumId) {
+    try {
+        const response = await fetch(`/api/albums/${albumId}`);
+        if (!response.ok) throw new Error('Fout bij laden album');
+        
+        const album = await response.json();
+        currentAlbum = album;
+        
+        // Update de album beschrijving
+        window.updateAlbumDescription(album.title, album.description);
+        
+        // Laad de foto's van het album
+        if (album.photos && album.photos.length > 0) {
+            photos = album.photos;
+            currentPhotoIndex = 0;
+            showCurrentPhoto();
+            startSlideshow();
+        }
+    } catch (error) {
+        console.error('Error loading album:', error);
+    }
+}

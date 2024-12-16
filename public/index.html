@@ -10,36 +10,33 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Wouter Koppen Fotografie</title>
-    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
     <nav>
         <div class="logo">Wouter Koppen</div>
-        <div class="nav-right">
-            <button id="menuButton" class="menu-button">
-                <i class="fas fa-ellipsis-v"></i>
+        <div class="menu">
+            <button id="toggleDescription" class="btn-icon" title="Toon/verberg beschrijving">
+                <i class="fas fa-align-left"></i>
             </button>
-            <div id="menuDropdown" class="menu-dropdown">
-                <!-- Menu items worden hier dynamisch toegevoegd -->
-            </div>
+            <a href="/admin" class="admin-link">Admin</a>
         </div>
     </nav>
 
-    <main class="carousel-container">
+    <div class="carousel-container">
         <div class="photo-container">
             <!-- Foto's worden hier dynamisch toegevoegd -->
         </div>
         <button class="carousel-button prev" aria-label="Vorige foto">&#10094;</button>
         <button class="carousel-button next" aria-label="Volgende foto">&#10095;</button>
-        
-        <div class="album-description">
-            <h2 class="album-title"></h2>
-            <p class="album-text"></p>
-        </div>
-
         <div class="timer-bar"></div>
-    </main>
+    </div>
+
+    <div class="album-description">
+        <h2 class="album-title"></h2>
+        <p class="album-text"></p>
+    </div>
 
     <div class="dock-trigger"></div>
     <div class="album-dock">
