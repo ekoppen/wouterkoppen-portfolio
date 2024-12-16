@@ -67,6 +67,7 @@ function logout(e) {
 let currentPhotoIndex = 0;
 let photos = [];
 let slideTimer;
+let currentAlbum = null;
 const SLIDE_DURATION = 10000; // 10 seconden
 
 // Foto's laden
@@ -83,6 +84,7 @@ async function loadPhotos() {
         }
         
         photos = album.photos;
+        currentAlbum = album;
         if (photos.length > 0) {
             showPhoto(0);
             startSlideTimer();
@@ -231,6 +233,25 @@ function showPhoto(index) {
     newSlide.setAttribute('data-protected', 'true');
     newSlide.setAttribute('data-view-id', viewId);
     
+    // Laad de afbeelding om de dominante kleur te bepalen
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.src = `${photo.path}?v=${viewId}`;
+    img.onload = () => {
+        const color = getImageColor(img);
+        const textColor = getContrastColor(color);
+        
+        // Update kleuren van UI elementen
+        document.documentElement.style.setProperty('--dynamic-text-color', textColor);
+        document.querySelector('.logo').style.color = textColor;
+        document.querySelectorAll('.btn-icon').forEach(btn => {
+            btn.style.color = textColor;
+        });
+        document.querySelectorAll('.album-dock-item').forEach(item => {
+            item.style.color = textColor;
+        });
+    };
+    
     // Verwijder oude slides
     const oldSlides = container.querySelectorAll('.photo-slide');
     oldSlides.forEach(slide => {
@@ -282,27 +303,31 @@ function resetSlideTimer() {
 // Albums laden en dock vullen
 async function loadAlbums() {
     try {
-        const response = await fetch('/api/albums');
-        if (!response.ok) throw new Error('Fout bij ophalen albums');
+        // Laad albums
+        const albumsResponse = await fetch('/api/albums');
+        if (!albumsResponse.ok) throw new Error('Fout bij ophalen albums');
+        const albums = await albumsResponse.json();
         
-        const albums = await response.json();
         const dock = document.querySelector('.album-dock');
         const currentAlbum = localStorage.getItem('currentAlbum') || 'home';
         
         // Maak de dock leeg
         dock.innerHTML = '';
         
-        // Filter albums die we willen tonen (bijvoorbeeld niet het admin album)
-        const filteredAlbums = albums.filter(album => album.title !== 'admin');
+        // Filter en sorteer albums
+        const filteredAlbums = albums
+            .filter(album => album.title !== 'admin')
+            .sort((a, b) => {
+                if (a.title.toLowerCase() === 'home') return -1;
+                if (b.title.toLowerCase() === 'home') return 1;
+                return a.order - b.order || a.title.localeCompare(b.title);
+            });
         
-        // Sorteer albums met 'home' eerst, daarna op order
-        filteredAlbums.sort((a, b) => {
-            if (a.title.toLowerCase() === 'home') return -1;
-            if (b.title.toLowerCase() === 'home') return 1;
-            return a.order - b.order || a.title.localeCompare(b.title);
-        });
+        // Container voor albums (links)
+        const albumsContainer = document.createElement('div');
+        albumsContainer.className = 'albums-container';
         
-        // Maak dock items
+        // Voeg albums toe
         filteredAlbums.forEach(album => {
             const link = document.createElement('a');
             link.href = '#';
@@ -324,8 +349,37 @@ async function loadAlbums() {
                 link.classList.add('active');
             });
             
-            dock.appendChild(link);
+            albumsContainer.appendChild(link);
         });
+        
+        // Container voor pagina's (rechts)
+        const pagesContainer = document.createElement('div');
+        pagesContainer.className = 'pages-container';
+        
+        // Probeer pagina's te laden
+        try {
+            const pagesResponse = await fetchWithAuth('/api/pages');
+            if (pagesResponse.ok) {
+                const pages = await pagesResponse.json();
+                // Voeg pagina's toe als ze beschikbaar zijn
+                pages.forEach(page => {
+                    const link = document.createElement('a');
+                    link.href = `/page/${page.slug}`;
+                    link.className = 'album-dock-item page-item';
+                    link.textContent = page.title;
+                    pagesContainer.appendChild(link);
+                });
+            }
+        } catch (error) {
+            console.log('Pagina\'s nog niet beschikbaar');
+        }
+        
+        // Voeg beide containers toe aan de dock
+        dock.appendChild(albumsContainer);
+        if (pagesContainer.children.length > 0) {
+            dock.appendChild(pagesContainer);
+        }
+        
     } catch (error) {
         console.error('Fout bij het laden van albums:', error);
     }
@@ -343,18 +397,17 @@ async function switchAlbum(albumName) {
             return;
         }
         
-        // Update globale photos array en start nieuwe slideshow
+        // Update globale variabelen
         photos = album.photos;
+        currentAlbum = album;
         localStorage.setItem('currentAlbum', albumName);
         showPhoto(0);
         startSlideTimer();
 
         // Update album beschrijving
         const albumDescription = document.querySelector('.album-description');
-        const albumTitle = albumDescription.querySelector('.album-title');
         const albumText = albumDescription.querySelector('.album-text');
 
-        if (albumTitle) albumTitle.textContent = album.title;
         if (albumText) albumText.textContent = album.description || '';
 
         // Toon de beschrijving
@@ -369,7 +422,19 @@ async function switchAlbum(albumName) {
     }
 }
 
-// Voeg deze functie toe boven de DOMContentLoaded event listener
+// Voeg deze functie toe om de tekstkleur te resetten
+function resetTextColors() {
+    document.documentElement.style.setProperty('--dynamic-text-color', 'var(--text-color)');
+    document.querySelector('.logo').style.removeProperty('color');
+    document.querySelectorAll('.btn-icon').forEach(btn => {
+        btn.style.removeProperty('color');
+    });
+    document.querySelectorAll('.album-dock-item').forEach(item => {
+        item.style.removeProperty('color');
+    });
+}
+
+// Update de setupDescriptionToggle functie
 function setupDescriptionToggle() {
     const toggleButton = document.getElementById('toggleDescription');
     const carouselContainer = document.querySelector('.carousel-container');
@@ -383,18 +448,17 @@ function setupDescriptionToggle() {
     let isDescriptionVisible = false;
 
     toggleButton.addEventListener('click', () => {
-        console.log('Toggle button clicked'); // Debug log
+        console.log('Toggle button clicked');
         isDescriptionVisible = !isDescriptionVisible;
         
-        // Force a reflow to ensure the transition works
         carouselContainer.offsetHeight;
         
         if (isDescriptionVisible) {
             carouselContainer.classList.add('show-description');
             toggleButton.querySelector('i').classList.remove('fa-align-left');
             toggleButton.querySelector('i').classList.add('fa-times');
+            resetTextColors(); // Reset naar standaard tekstkleur
             
-            // Update de beschrijving met de huidige album info
             if (currentAlbum) {
                 const titleElement = albumDescription.querySelector('.album-title');
                 const textElement = albumDescription.querySelector('.album-text');
@@ -405,6 +469,25 @@ function setupDescriptionToggle() {
             carouselContainer.classList.remove('show-description');
             toggleButton.querySelector('i').classList.add('fa-align-left');
             toggleButton.querySelector('i').classList.remove('fa-times');
+            // Herbereken de tekstkleur voor de huidige foto
+            const currentSlide = document.querySelector('.photo-slide.active');
+            if (currentSlide) {
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.src = currentSlide.style.backgroundImage.slice(5, -2);
+                img.onload = () => {
+                    const color = getImageColor(img);
+                    const textColor = getContrastColor(color);
+                    document.documentElement.style.setProperty('--dynamic-text-color', textColor);
+                    document.querySelector('.logo').style.color = textColor;
+                    document.querySelectorAll('.btn-icon').forEach(btn => {
+                        btn.style.color = textColor;
+                    });
+                    document.querySelectorAll('.album-dock-item').forEach(item => {
+                        item.style.color = textColor;
+                    });
+                };
+            }
         }
     });
 }
