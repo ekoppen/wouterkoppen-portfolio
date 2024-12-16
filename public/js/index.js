@@ -253,6 +253,7 @@ function showPhoto(index) {
     currentPhotoIndex = (index + photos.length) % photos.length;
     const photo = photos[currentPhotoIndex];
     const container = document.querySelector('.photo-container');
+    if (!container) return;
     
     // Genereer unieke ID voor deze weergave
     const viewId = Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -299,11 +300,6 @@ function showPhoto(index) {
     
     container.appendChild(newSlide);
     
-    // Update foto informatie
-    document.querySelector('.photo-title').textContent = photo.title || '';
-    document.querySelector('.photo-description').textContent = photo.description || '';
-    document.querySelector('.photo-category').textContent = photo.category || '';
-
     // Reset en start timer
     resetSlideTimer();
     startSlideTimer();
@@ -344,14 +340,17 @@ async function loadAlbums() {
         const dock = document.querySelector('.album-dock');
         const currentAlbum = localStorage.getItem('currentAlbum') || 'home';
         
+        // Maak de dock leeg
+        dock.innerHTML = '';
+        
         // Filter albums die we willen tonen (bijvoorbeeld niet het admin album)
         const filteredAlbums = albums.filter(album => album.title !== 'admin');
         
-        // Sorteer albums met 'home' eerst
+        // Sorteer albums met 'home' eerst, daarna op order
         filteredAlbums.sort((a, b) => {
-            if (a.title === 'home') return -1;
-            if (b.title === 'home') return 1;
-            return a.title.localeCompare(b.title);
+            if (a.title.toLowerCase() === 'home') return -1;
+            if (b.title.toLowerCase() === 'home') return 1;
+            return a.order - b.order || a.title.localeCompare(b.title);
         });
         
         // Maak dock items
@@ -359,7 +358,7 @@ async function loadAlbums() {
             const link = document.createElement('a');
             link.href = '#';
             link.className = 'album-dock-item';
-            if (album.title === currentAlbum) {
+            if (album.title.toLowerCase() === currentAlbum.toLowerCase()) {
                 link.classList.add('active');
             }
             link.textContent = album.title.charAt(0).toUpperCase() + album.title.slice(1);
@@ -400,6 +399,22 @@ async function switchAlbum(albumName) {
         localStorage.setItem('currentAlbum', albumName);
         showPhoto(0);
         startSlideTimer();
+
+        // Update album beschrijving
+        const albumDescription = document.querySelector('.album-description');
+        const albumTitle = albumDescription.querySelector('.album-title');
+        const albumText = albumDescription.querySelector('.album-text');
+
+        if (albumTitle) albumTitle.textContent = album.title;
+        if (albumText) albumText.textContent = album.description || '';
+
+        // Toon de beschrijving
+        albumDescription.classList.add('show');
+
+        // Verberg de beschrijving na 5 seconden
+        setTimeout(() => {
+            albumDescription.classList.remove('show');
+        }, 5000);
     } catch (error) {
         console.error('Fout bij wisselen van album:', error);
     }

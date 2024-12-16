@@ -35,6 +35,10 @@
 - [x] Zoom en klik functie maken voor de voorpagina
 - [x] Selecteer meerdere foto's
 - [x] Verwijder geselecteerde foto's
-- [ ] Deselecteer alle foto's
+- [x] Deselecteer alle foto's
 - [ ] Selecteren van foto's voor download
 - [ ] Downloaden van geselecteerde foto's
+- [ ] Albums sorteren mogelijk maken en weergave op home pagina
+- [ ] Weergave beschrijving van albums op home pagina
+- [ ] Font aanpassing mogelijk maken in admin interface
+- [ ] Aanpassen voor bestaande databaseserver installatie.

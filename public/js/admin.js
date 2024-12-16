@@ -29,7 +29,7 @@ import {
 import { initializeTheme } from './theme.js';
 
 // Globale variabelen
-let currentAlbumId = null;
+window.currentAlbumId = null;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
@@ -104,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
         handlePageThemeChange,
         startEditingAlbumTitle,
         startEditingAlbumDescription,
+        showAlbumDetails,
         openUploadDialog,
         toggleSelectMode,
         addSelectedToAlbum,
@@ -615,51 +616,64 @@ function renderAlbums() {
     if (!container) return;
 
     container.innerHTML = '';
-    albums.forEach(album => {
+    
+    // Sorteer albums: home album eerst, daarna op order
+    const sortedAlbums = [...albums].sort((a, b) => {
+        // Home album altijd eerst
+        if (a.title.toLowerCase() === 'home') return -1;
+        if (b.title.toLowerCase() === 'home') return 1;
+        
+        // Sorteer op order, fallback naar titel als order gelijk is
+        if (a.order === b.order) {
+            return a.title.localeCompare(b.title);
+        }
+        return a.order - b.order;
+    });
+
+    sortedAlbums.forEach(album => {
         const albumCard = document.createElement('div');
         albumCard.className = 'album-card';
         albumCard.dataset.id = album._id;
+        albumCard.dataset.title = album.title;
 
-        // Album header
+        // Album header (sleepbaar gedeelte)
         const albumHeader = document.createElement('div');
         albumHeader.className = 'album-header';
+        albumHeader.draggable = true; // Header is sleepbaar
         albumHeader.innerHTML = `
             <div class="album-title">
                 <h3>${album.title}</h3>
                 <p class="photo-count">${album.photos ? album.photos.length : 0} foto's</p>
             </div>
             <div class="album-actions">
+                <button class="btn-icon" onclick="showAlbumDetails(${JSON.stringify(album)})" title="Album details">
+                    <i class="fas fa-info-circle"></i>
+                </button>
                 <button class="btn-icon" onclick="window.location.href='/album.html?id=${album._id}'" title="Album bewerken">
                     <i class="fas fa-edit"></i>
                 </button>
             </div>
         `;
 
-        // Album preview
+        // Voeg drag & drop event listeners toe aan de header
+        albumHeader.addEventListener('dragstart', handleAlbumDragStart);
+        albumHeader.addEventListener('dragend', handleAlbumDragEnd);
+
+        // Album preview (klikbaar voor details)
         const albumPreview = document.createElement('div');
         albumPreview.className = 'album-preview';
         
         // Voeg foto previews toe
         if (album.photos && album.photos.length > 0) {
-            // Neem de eerste 8 foto's
             const previewPhotos = album.photos.slice(0, 8);
-            
-            previewPhotos.forEach((photo, index) => {
+            previewPhotos.forEach(photo => {
                 const previewContainer = document.createElement('div');
                 previewContainer.className = 'preview-photo';
                 
                 const img = document.createElement('img');
                 img.src = photo.path;
                 img.alt = photo.title || 'Preview';
-                img.loading = 'lazy';  // Lazy loading voor betere performance
-                
-                // Als dit de eerste foto is, bereken dan de gemiddelde kleur
-                if (index === 0) {
-                    img.onload = () => {
-                        const avgColor = getAverageColor(img);
-                        albumPreview.style.backgroundColor = `rgb(${avgColor.r}, ${avgColor.g}, ${avgColor.b})`;
-                    };
-                }
+                img.loading = 'lazy';
                 
                 previewContainer.appendChild(img);
                 albumPreview.appendChild(previewContainer);
@@ -668,30 +682,100 @@ function renderAlbums() {
             albumPreview.innerHTML = '<p class="no-photos">Geen foto\'s</p>';
         }
 
+        // Voeg click handler toe voor album details
+        albumPreview.addEventListener('click', () => {
+            showAlbumDetails(album);
+        });
+
         // Voeg alles samen
         albumCard.appendChild(albumHeader);
         albumCard.appendChild(albumPreview);
 
-        // Voeg click handler toe voor album weergave
-        albumCard.addEventListener('click', (e) => {
-            // Voorkom dat clicks op knoppen het album openen
-            if (!e.target.closest('.btn-icon')) {
-                showAlbumDetails(album);
-            }
-        });
-
-        // Voeg drag & drop handlers toe
-        albumCard.addEventListener('dragover', handleDragOver);
-        albumCard.addEventListener('dragleave', handleDragLeave);
-        albumCard.addEventListener('drop', (e) => {
-            e.stopPropagation(); // Voorkom event bubbling
-            handleDrop(e, handlePhotoDropOnAlbum);
-        });
+        // Voeg dragover en drop handlers toe aan de card zelf
+        albumCard.addEventListener('dragover', handleAlbumDragOver);
+        albumCard.addEventListener('drop', handleAlbumDrop);
 
         container.appendChild(albumCard);
     });
 
     updateItemCounts();
+}
+
+// Album drag & drop handlers
+function handleAlbumDragStart(e) {
+    const albumCard = e.target.closest('.album-card');
+    albumCard.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', albumCard.dataset.id);
+}
+
+function handleAlbumDragEnd(e) {
+    const albumCard = e.target.closest('.album-card');
+    albumCard.classList.remove('dragging');
+    document.querySelectorAll('.album-card').forEach(card => {
+        card.classList.remove('drag-over');
+    });
+}
+
+function handleAlbumDragOver(e) {
+    e.preventDefault();
+    const card = e.target.closest('.album-card');
+    if (card && !card.classList.contains('dragging')) {
+        card.classList.add('drag-over');
+    }
+}
+
+async function handleAlbumDrop(e) {
+    e.preventDefault();
+    const container = document.getElementById('albumsContainer');
+    const cards = Array.from(container.querySelectorAll('.album-card'));
+    const draggedId = e.dataTransfer.getData('text/plain');
+    const dropTarget = e.target.closest('.album-card');
+
+    if (!dropTarget || draggedId === dropTarget.dataset.id) return;
+
+    // Vind de huidige posities
+    const draggedCard = container.querySelector(`[data-id="${draggedId}"]`);
+    const draggedIndex = cards.indexOf(draggedCard);
+    const dropIndex = cards.indexOf(dropTarget);
+
+    // Verplaats het element
+    if (draggedIndex < dropIndex) {
+        dropTarget.parentNode.insertBefore(draggedCard, dropTarget.nextSibling);
+    } else {
+        dropTarget.parentNode.insertBefore(draggedCard, dropTarget);
+    }
+
+    // Verzamel de nieuwe volgorde
+    const newOrder = Array.from(container.querySelectorAll('.album-card')).map(card => card.dataset.id);
+
+    // Check of het home album nog steeds eerst staat
+    const homeAlbum = albums.find(a => a.title.toLowerCase() === 'home');
+    if (homeAlbum && newOrder[0] !== homeAlbum._id) {
+        showMessage('Het home album moet altijd als eerste staan', 'error');
+        renderAlbums(); // Reset de volgorde
+        return;
+    }
+
+    try {
+        // Update de volgorde op de server
+        const response = await fetchWithAuth('/api/albums/reorder', {
+            method: 'PUT',
+            body: JSON.stringify({ albumIds: newOrder })
+        });
+
+        if (!response.ok) throw new Error('Fout bij updaten volgorde');
+
+        // Update de lokale albums array met de nieuwe volgorde
+        const updatedAlbums = await response.json();
+        albums = updatedAlbums;
+
+        showMessage('Album volgorde bijgewerkt');
+    } catch (error) {
+        console.error('Error updating album order:', error);
+        showMessage('Fout bij bijwerken album volgorde', 'error');
+        renderAlbums(); // Reset de volgorde
+    }
 }
 
 // Helper functie om de gemiddelde kleur van een afbeelding te berekenen
@@ -1461,6 +1545,17 @@ function showAlbumDetails(album) {
     if (createdAt) createdAt.textContent = formatDate(album.createdAt);
     if (updatedAt) updatedAt.textContent = formatDate(album.updatedAt);
     if (albumTitle) albumTitle.textContent = album.title || '';
+
+    // Voeg edit knoppen toe
+    const titleEditBtn = document.querySelector('[data-action="editTitle"]');
+    const descriptionEditBtn = document.querySelector('[data-action="editDescription"]');
+
+    if (titleEditBtn) {
+        titleEditBtn.onclick = () => startEditingAlbumTitle();
+    }
+    if (descriptionEditBtn) {
+        descriptionEditBtn.onclick = () => startEditingAlbumDescription();
+    }
 }
 
 // Album view functies
@@ -1799,7 +1894,7 @@ function initializeAlbumThumbnailControl() {
 
 // Voeg een functie toe om het huidige album ID in te stellen
 function setCurrentAlbum(albumId) {
-    currentAlbumId = albumId;
+    window.currentAlbumId = albumId;
     // Update de album details sectie
     const albumDetailsSection = document.querySelector('.album-details');
     if (albumDetailsSection) {
@@ -1814,13 +1909,12 @@ function formatDate(dateString) {
 }
 
 // Album bewerken functies
-function startEditingAlbumTitle() {
-    const displayContainer = document.getElementById('albumTitleDisplay').parentElement;
-    const display = document.getElementById('albumTitleDisplay');
-    const editButton = displayContainer.querySelector('.btn-edit');
-    if (!display || !currentAlbumId) return;
-    
-    const currentTitle = display.textContent;
+async function startEditingAlbumTitle() {
+    const titleDisplay = document.getElementById('albumTitleDisplay');
+    const editButton = document.querySelector('[data-action="editTitle"]');
+    if (!titleDisplay || !window.currentAlbumId) return;
+
+    const currentTitle = titleDisplay.textContent;
     const input = document.createElement('input');
     input.type = 'text';
     input.value = currentTitle;
@@ -1829,111 +1923,154 @@ function startEditingAlbumTitle() {
     // Vervang edit knop met save knop
     const saveButton = document.createElement('button');
     saveButton.className = 'btn-icon btn-save';
-    saveButton.title = 'Opslaan';
     saveButton.innerHTML = '<i class="fas fa-check"></i>';
-    editButton.style.display = 'none';
-    displayContainer.appendChild(saveButton);
-    
+    saveButton.title = 'Opslaan';
+
+    if (editButton) {
+        editButton.style.display = 'none';
+    }
+
     const saveChanges = async () => {
         const newTitle = input.value.trim();
-        if (newTitle !== currentTitle) {
+        if (newTitle && newTitle !== currentTitle) {
             try {
-                await editAlbum(currentAlbumId, { title: newTitle });
-                display.textContent = newTitle;
-                // Update de hoofdtitel ook
-                const albumTitleHeader = document.getElementById('albumTitle');
-                if (albumTitleHeader) {
-                    albumTitleHeader.textContent = newTitle;
+                await fetchWithAuth(`/api/albums/${window.currentAlbumId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ title: newTitle })
+                });
+
+                titleDisplay.textContent = newTitle;
+                const albumTitle = document.getElementById('albumTitle');
+                if (albumTitle) {
+                    albumTitle.textContent = newTitle;
                 }
+                showMessage('Titel succesvol bijgewerkt');
             } catch (error) {
                 console.error('Error updating album title:', error);
-                showMessage('Fout bij bijwerken van albumtitel', 'error');
-                display.textContent = currentTitle;
+                showMessage('Fout bij bijwerken van titel', 'error');
+                titleDisplay.textContent = currentTitle;
             }
         } else {
-            display.textContent = currentTitle;
+            titleDisplay.textContent = currentTitle;
         }
-        displayContainer.replaceChild(display, input);
-        editButton.style.display = '';
-        saveButton.remove();
+
+        // Herstel de UI
+        if (editButton) {
+            editButton.style.display = '';
+        }
+        if (saveButton.parentNode) {
+            saveButton.parentNode.removeChild(saveButton);
+        }
+        titleDisplay.parentNode.replaceChild(titleDisplay, input);
     };
-    
-    input.onblur = saveChanges;
-    saveButton.onclick = (e) => {
-        e.preventDefault();
-        saveChanges();
-    };
-    input.onkeypress = (e) => {
+
+    // Event listeners
+    input.addEventListener('blur', saveChanges);
+    input.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
+            e.preventDefault();
             saveChanges();
         }
-    };
-    
-    displayContainer.replaceChild(input, display);
+    });
+    saveButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        saveChanges();
+    });
+
+    // Voeg save knop toe en focus input
+    titleDisplay.parentNode.appendChild(saveButton);
+    titleDisplay.parentNode.replaceChild(input, titleDisplay);
     input.focus();
 }
 
-// Helper functie om textarea automatisch te laten groeien
-function autoGrowTextarea(element) {
-    element.style.height = 'auto';
-    element.style.height = (element.scrollHeight) + 'px';
-}
+async function startEditingAlbumDescription() {
+    const descriptionDisplay = document.getElementById('albumDescriptionDisplay');
+    const editButton = document.querySelector('[data-action="editDescription"]');
+    if (!descriptionDisplay || !window.currentAlbumId) return;
 
-function startEditingAlbumDescription() {
-    const displayContainer = document.getElementById('albumDescriptionDisplay').parentElement;
-    const display = document.getElementById('albumDescriptionDisplay');
-    const editButton = displayContainer.querySelector('.btn-edit');
-    if (!display || !currentAlbumId) return;
-    
-    const currentDescription = display.textContent;
+    const currentDescription = descriptionDisplay.textContent;
     const textarea = document.createElement('textarea');
     textarea.value = currentDescription;
     textarea.className = 'editable-input';
-
-    // Initiële hoogte instellen
-    textarea.style.minHeight = '1.5rem';
-    
-    // Event listener voor automatisch groeien
-    textarea.addEventListener('input', () => autoGrowTextarea(textarea));
+    textarea.style.minHeight = '100px';
 
     // Vervang edit knop met save knop
     const saveButton = document.createElement('button');
     saveButton.className = 'btn-icon btn-save';
-    saveButton.title = 'Opslaan';
     saveButton.innerHTML = '<i class="fas fa-check"></i>';
-    editButton.style.display = 'none';
-    displayContainer.appendChild(saveButton);
-    
+    saveButton.title = 'Opslaan';
+
+    if (editButton) {
+        editButton.style.display = 'none';
+    }
+
     const saveChanges = async () => {
         const newDescription = textarea.value.trim();
-        if (newDescription !== currentDescription) {
-            try {
-                await editAlbum(currentAlbumId, { description: newDescription });
-                display.textContent = newDescription;
-            } catch (error) {
-                console.error('Error updating album description:', error);
-                showMessage('Fout bij bijwerken van albumbeschrijving', 'error');
-                display.textContent = currentDescription;
+        const container = textarea.parentNode;
+        
+        if (!container) return;
+
+        try {
+            if (newDescription !== currentDescription) {
+                const response = await fetchWithAuth(`/api/albums/${window.currentAlbumId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ description: newDescription })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Fout bij bijwerken beschrijving');
+                }
+
+                // Update de lokale weergave
+                descriptionDisplay.textContent = newDescription;
+                
+                // Ververs de albums array
+                await loadAlbums();
+                
+                showMessage('Beschrijving succesvol bijgewerkt');
+            } else {
+                descriptionDisplay.textContent = currentDescription;
             }
-        } else {
-            display.textContent = currentDescription;
+        } catch (error) {
+            console.error('Error updating album description:', error);
+            showMessage('Fout bij bijwerken van beschrijving', 'error');
+            descriptionDisplay.textContent = currentDescription;
+        } finally {
+            // Herstel de UI
+            if (editButton) {
+                editButton.style.display = '';
+            }
+            if (saveButton.parentNode) {
+                saveButton.parentNode.removeChild(saveButton);
+            }
+            if (container) {
+                container.replaceChild(descriptionDisplay, textarea);
+            }
         }
-        displayContainer.replaceChild(display, textarea);
-        editButton.style.display = '';
-        saveButton.remove();
     };
-    
-    textarea.onblur = saveChanges;
-    saveButton.onclick = (e) => {
+
+    // Event listeners
+    textarea.addEventListener('blur', saveChanges);
+    saveButton.addEventListener('click', (e) => {
         e.preventDefault();
         saveChanges();
-    };
-    
-    displayContainer.replaceChild(textarea, display);
-    textarea.focus();
-    
-    // Pas initiële hoogte aan
-    autoGrowTextarea(textarea);
+    });
+
+    // Voeg save knop toe en focus textarea
+    const container = descriptionDisplay.parentNode;
+    if (container) {
+        container.appendChild(saveButton);
+        container.replaceChild(textarea, descriptionDisplay);
+        textarea.focus();
+
+        // Auto-resize textarea
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+        textarea.addEventListener('input', () => {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        });
+    }
 }
 
 // View toggle en sortering

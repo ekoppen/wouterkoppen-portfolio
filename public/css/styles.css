@@ -471,5 +471,42 @@ nav {
     }
 }
 
+/* Album beschrijving */
+.album-description {
+    position: fixed;
+    top: 5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    padding: 1.5rem;
+    border-radius: 12px;
+    max-width: 600px;
+    width: calc(100% - 4rem);
+    color: var(--adaptive-text-color);
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 90;
+    text-align: center;
+}
+
+.album-description.show {
+    opacity: 1;
+}
+
+.album-description h2 {
+    margin: 0 0 1rem 0;
+    font-size: 1.2rem;
+    font-weight: normal;
+    letter-spacing: 0.05em;
+}
+
+.album-description p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    opacity: 0.9;
+}
+
 /* Rest van de bestaande styling blijft hetzelfde */
 [... rest of the original file remains exactly the same ...] 

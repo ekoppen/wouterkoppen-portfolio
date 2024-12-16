@@ -1662,4 +1662,30 @@ section {
 }
 
 /* Lijst weergave styling */
+.album-card {
+    cursor: move;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.album-card.dragging {
+    opacity: 0.5;
+    transform: scale(1.02);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+
+.album-card.drag-over {
+    border: 2px dashed var(--primary-color);
+    transform: scale(1.02);
+}
+
+/* Voorkom dat de drag & drop interface de knoppen beïnvloedt */
+.album-card .btn-icon {
+    cursor: pointer;
+}
+
+/* Zorg dat het home album visueel anders is */
+.album-card[data-title="Home"],
+.album-card[data-title="home"] {
+    border-left: 4px solid var(--primary-color);
+}
  

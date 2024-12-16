@@ -4,12 +4,48 @@ const Album = require('../models/Album');
 const auth = require('../middleware/auth');
 const mongoose = require('mongoose');
 
+// Herorden albums (moet voor andere routes komen vanwege route matching)
+router.put('/reorder', auth, async (req, res) => {
+    try {
+        const { albumIds } = req.body;
+        
+        // Valideer input
+        if (!Array.isArray(albumIds)) {
+            return res.status(400).json({ error: 'Ongeldige albumvolgorde' });
+        }
+
+        // Haal het home album op
+        const homeAlbum = await Album.findOne({ title: /^home$/i });
+        if (homeAlbum && albumIds[0] !== homeAlbum._id.toString()) {
+            return res.status(400).json({ error: 'Home album moet als eerste staan' });
+        }
+
+        // Update de volgorde van alle albums
+        const updatePromises = albumIds.map((id, index) => {
+            return Album.findByIdAndUpdate(id, { order: index }, { new: true });
+        });
+
+        await Promise.all(updatePromises);
+
+        // Haal de bijgewerkte albums op
+        const updatedAlbums = await Album.find()
+            .populate('photos')
+            .sort('order title')
+            .exec();
+
+        res.json(updatedAlbums);
+    } catch (error) {
+        console.error('Error reordering albums:', error);
+        res.status(500).json({ error: 'Fout bij herordenen van albums' });
+    }
+});
+
 // Alle albums ophalen
 router.get('/', async (req, res) => {
     try {
         const albums = await Album.find()
-            .populate('photos')  // Voeg photos toe voor previews
-            .sort('title')
+            .populate('photos')
+            .sort('order title')
             .exec();
         
         res.json(albums);
