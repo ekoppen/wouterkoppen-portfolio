@@ -457,7 +457,16 @@ function setupDescriptionToggle() {
             carouselContainer.classList.add('show-description');
             toggleButton.querySelector('i').classList.remove('fa-align-left');
             toggleButton.querySelector('i').classList.add('fa-times');
-            resetTextColors(); // Reset naar standaard tekstkleur
+            
+            // Forceer witte tekst
+            document.documentElement.style.setProperty('--dynamic-text-color', '#ffffff');
+            document.querySelector('.logo').style.color = '#ffffff';
+            document.querySelectorAll('.btn-icon').forEach(btn => {
+                btn.style.color = '#ffffff';
+            });
+            document.querySelectorAll('.album-dock-item').forEach(item => {
+                item.style.color = '#ffffff';
+            });
             
             if (currentAlbum) {
                 const titleElement = albumDescription.querySelector('.album-title');
@@ -469,6 +478,7 @@ function setupDescriptionToggle() {
             carouselContainer.classList.remove('show-description');
             toggleButton.querySelector('i').classList.add('fa-align-left');
             toggleButton.querySelector('i').classList.remove('fa-times');
+            
             // Herbereken de tekstkleur voor de huidige foto
             const currentSlide = document.querySelector('.photo-slide.active');
             if (currentSlide) {
