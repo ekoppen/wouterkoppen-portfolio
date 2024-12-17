@@ -238,18 +238,13 @@ function showPhoto(index) {
     img.crossOrigin = "Anonymous";
     img.src = `${photo.path}?v=${viewId}`;
     img.onload = () => {
-        const color = getImageColor(img);
-        const textColor = getContrastColor(color);
-        
-        // Update kleuren van UI elementen
-        document.documentElement.style.setProperty('--dynamic-text-color', textColor);
-        document.querySelector('.logo').style.color = textColor;
-        document.querySelectorAll('.btn-icon').forEach(btn => {
-            btn.style.color = textColor;
-        });
-        document.querySelectorAll('.album-dock-item').forEach(item => {
-            item.style.color = textColor;
-        });
+        // Alleen kleur aanpassen als de beschrijving niet zichtbaar is
+        const carouselContainer = document.querySelector('.carousel-container');
+        if (!carouselContainer.classList.contains('show-description')) {
+            const color = getImageColor(img);
+            const textColor = getContrastColor(color);
+            updateTextColors(textColor);
+        }
     };
     
     // Verwijder oude slides
@@ -273,6 +268,18 @@ function showPhoto(index) {
     // Reset en start timer
     resetSlideTimer();
     startSlideTimer();
+}
+
+// Helper functie voor het updaten van tekstkleuren
+function updateTextColors(color) {
+    document.documentElement.style.setProperty('--dynamic-text-color', color);
+    document.querySelector('.logo').style.color = color;
+    document.querySelectorAll('.btn-icon').forEach(btn => {
+        btn.style.color = color;
+    });
+    document.querySelectorAll('.album-dock-item').forEach(item => {
+        item.style.color = color;
+    });
 }
 
 function startSlideTimer() {
@@ -356,9 +363,9 @@ async function loadAlbums() {
         const pagesContainer = document.createElement('div');
         pagesContainer.className = 'pages-container';
         
-        // Probeer pagina's te laden
+        // Laad pagina's zonder authenticatie
         try {
-            const pagesResponse = await fetchWithAuth('/api/pages');
+            const pagesResponse = await fetch('/api/pages');
             if (pagesResponse.ok) {
                 const pages = await pagesResponse.json();
                 // Voeg pagina's toe als ze beschikbaar zijn
@@ -371,7 +378,7 @@ async function loadAlbums() {
                 });
             }
         } catch (error) {
-            console.log('Pagina\'s nog niet beschikbaar');
+            console.log('Fout bij laden van pagina\'s:', error);
         }
         
         // Voeg beide containers toe aan de dock
@@ -401,6 +408,25 @@ async function switchAlbum(albumName) {
         photos = album.photos;
         currentAlbum = album;
         localStorage.setItem('currentAlbum', albumName);
+        
+        // Controleer of de beschrijving zichtbaar is
+        const carouselContainer = document.querySelector('.carousel-container');
+        if (carouselContainer.classList.contains('show-description')) {
+            // Als de beschrijving zichtbaar is, altijd witte tekst
+            updateTextColors('#ffffff');
+        } else {
+            // Als de beschrijving niet zichtbaar is, bepaal de kleur op basis van de eerste foto
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.src = photos[0].path;
+            img.onload = () => {
+                const color = getImageColor(img);
+                const textColor = getContrastColor(color);
+                updateTextColors(textColor);
+            };
+        }
+        
+        // Toon de eerste foto en start de timer
         showPhoto(0);
         startSlideTimer();
 
@@ -412,10 +438,34 @@ async function switchAlbum(albumName) {
 
         // Toon de beschrijving
         albumDescription.classList.add('show');
+        carouselContainer.classList.add('show-description');
+        const toggleButton = document.getElementById('toggleDescription');
+        if (toggleButton) {
+            toggleButton.querySelector('i').classList.remove('fa-align-left');
+            toggleButton.querySelector('i').classList.add('fa-times');
+        }
+        updateTextColors('#ffffff');
 
         // Verberg de beschrijving na 5 seconden
         setTimeout(() => {
             albumDescription.classList.remove('show');
+            carouselContainer.classList.remove('show-description');
+            if (toggleButton) {
+                toggleButton.querySelector('i').classList.add('fa-align-left');
+                toggleButton.querySelector('i').classList.remove('fa-times');
+            }
+            // Update tekstkleur op basis van de huidige foto
+            const currentSlide = document.querySelector('.photo-slide.active');
+            if (currentSlide) {
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.src = currentSlide.style.backgroundImage.slice(5, -2);
+                img.onload = () => {
+                    const color = getImageColor(img);
+                    const textColor = getContrastColor(color);
+                    updateTextColors(textColor);
+                };
+            }
         }, 5000);
     } catch (error) {
         console.error('Fout bij wisselen van album:', error);
@@ -458,15 +508,8 @@ function setupDescriptionToggle() {
             toggleButton.querySelector('i').classList.remove('fa-align-left');
             toggleButton.querySelector('i').classList.add('fa-times');
             
-            // Forceer witte tekst
-            document.documentElement.style.setProperty('--dynamic-text-color', '#ffffff');
-            document.querySelector('.logo').style.color = '#ffffff';
-            document.querySelectorAll('.btn-icon').forEach(btn => {
-                btn.style.color = '#ffffff';
-            });
-            document.querySelectorAll('.album-dock-item').forEach(item => {
-                item.style.color = '#ffffff';
-            });
+            // Altijd lichte tekst als beschrijving zichtbaar is
+            updateTextColors('#ffffff');
             
             if (currentAlbum) {
                 const titleElement = albumDescription.querySelector('.album-title');
@@ -479,7 +522,7 @@ function setupDescriptionToggle() {
             toggleButton.querySelector('i').classList.add('fa-align-left');
             toggleButton.querySelector('i').classList.remove('fa-times');
             
-            // Herbereken de tekstkleur voor de huidige foto
+            // Herstel de tekstkleur op basis van de huidige foto
             const currentSlide = document.querySelector('.photo-slide.active');
             if (currentSlide) {
                 const img = new Image();
@@ -488,14 +531,7 @@ function setupDescriptionToggle() {
                 img.onload = () => {
                     const color = getImageColor(img);
                     const textColor = getContrastColor(color);
-                    document.documentElement.style.setProperty('--dynamic-text-color', textColor);
-                    document.querySelector('.logo').style.color = textColor;
-                    document.querySelectorAll('.btn-icon').forEach(btn => {
-                        btn.style.color = textColor;
-                    });
-                    document.querySelectorAll('.album-dock-item').forEach(item => {
-                        item.style.color = textColor;
-                    });
+                    updateTextColors(textColor);
                 };
             }
         }

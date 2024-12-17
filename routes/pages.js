@@ -5,7 +5,7 @@ const Page = require('../models/Page');
 const Album = require('../models/Album');
 
 // Alle pagina's ophalen
-router.get('/', auth, async (req, res) => {
+router.get('/', async (req, res) => {
     try {
         const pages = await Page.find()
             .populate('theme')
